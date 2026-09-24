@@ -3936,3 +3936,65 @@ body:has(main.experience-teen)::before {
     animation: none;
   }
 }
+
+/* ==================================================================
+   中学端背景升级 v3 —— 流动极光画布（大改动版）
+   ::before = 网格 + 斜向光束（静态）
+   ::after  = 大色块极光，30s 缓慢漂移（reduced-motion 时静止）
+   ================================================================== */
+
+/* 底色：整页带蓝紫色调，不再过渡到纯白 */
+body:has(main.experience-teen) {
+  background:
+    radial-gradient(1200px 700px at 88% -2%, rgba(119, 97, 214, 0.26), transparent 62%),
+    radial-gradient(1000px 640px at -8% 10%, rgba(38, 209, 234, 0.26), transparent 58%),
+    linear-gradient(180deg, #e4effb 0%, #ecf3fc 560px, #f2f7fd 1400px, #f7fafe 2200px);
+}
+
+/* 网格加强 + 两条斜向科技光束 */
+body:has(main.experience-teen)::before {
+  background-image:
+    linear-gradient(115deg, transparent 40%, rgba(38, 209, 234, 0.10) 50%, transparent 60%),
+    linear-gradient(65deg, transparent 55%, rgba(119, 97, 214, 0.09) 63%, transparent 71%),
+    linear-gradient(rgba(12, 32, 71, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(12, 32, 71, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 38px 38px, 38px 38px;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 1300px, rgba(0, 0, 0, 0.35) 2400px, transparent 3200px);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 1300px, rgba(0, 0, 0, 0.35) 2400px, transparent 3200px);
+}
+
+/* 流动极光：三个大色块在整页缓慢漂移 */
+body:has(main.experience-teen)::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(closest-side, rgba(38, 209, 234, 0.34), transparent 72%),
+    radial-gradient(closest-side, rgba(119, 97, 214, 0.30), transparent 72%),
+    radial-gradient(closest-side, rgba(24, 169, 142, 0.20), transparent 74%);
+  background-size: 78vmax 78vmax, 66vmax 66vmax, 58vmax 58vmax;
+  background-position: 78% 12%, 12% 58%, 88% 86%;
+  background-repeat: no-repeat;
+  animation: k12-aurora-flow 30s ease-in-out infinite alternate;
+}
+
+@keyframes k12-aurora-flow {
+  from { transform: translate3d(2.5%, -1.5%, 0); }
+  to { transform: translate3d(-2.5%, 2%, 0); }
+}
+
+/* 深色舞台“浮”在极光上：青紫双色辉光 */
+.teen-stage {
+  box-shadow:
+    0 0 0 100vmax #0c2047,
+    0 26px 80px -12px rgba(38, 209, 234, 0.45),
+    0 12px 44px -10px rgba(119, 97, 214, 0.38);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(main.experience-teen)::after {
+    animation: none;
+  }
+}
