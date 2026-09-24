@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, BookOpen, ChevronLeft, ChevronRight, ClipboardCheck, LoaderCircle, MessageCircle, Play, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, Camera, Cat, ChevronLeft, ChevronRight, ClipboardCheck, LoaderCircle, MessageCircle, Play, ScanSearch, Search, Sparkles, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { coursesApi } from "../api/client.js";
 import { DailyLearningPlan } from "../components/DailyLearningPlan.jsx";
@@ -57,19 +57,6 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
     : showcaseSource;
   const primary = experience === EXPERIENCE.PRIMARY;
   const visuals = visualsFor(experience);
-  const hero = primary
-    ? {
-      eyebrow: "小学 AI 探索乐园",
-      title: session ? `${displayName}，今天想探索什么？` : "和小智一起，发现 AI 的奇妙世界",
-      description: "通过故事、图形编程和趣味挑战认识人工智能，每完成一步都能看见自己的成长。",
-      action: "开始今天的探索",
-    }
-    : {
-      eyebrow: "个性化学习空间",
-      title: session ? `${displayName}，继续今天的学习` : "让每一次学习，都有清晰的下一步",
-      description: "课程、练习与 AI 学习台集中在一个学习空间，根据进度提供适合你的内容。",
-      action: "打开 AI 学习台",
-    };
 
   return (
     <div className="page home-page">
@@ -89,36 +76,53 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         <button type="button" onClick={() => navigate("progress")}><BarChart3 size={16} />{primary ? "我的成长" : "学习报告"}</button>
       </aside>
 
-      <section className="home-hero">
-        <div className="hero-copy">
-          <p className="eyebrow"><Sparkles size={14} /> {hero.eyebrow}</p>
-          <h1>{hero.title}</h1>
-          <p>{hero.description}</p>
-          <div className="hero-actions"><button className="button primary" type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><Play size={17} />{hero.action}</button><button className="text-button" type="button" onClick={() => navigate("courses")}>{primary ? "看看探索课程" : "浏览全部课程"}<ArrowRight size={16} /></button></div>
-        </div>
-        <div className="hero-image experience-hero-art" aria-label={primary ? "小学生和小智一起探索人工智能" : "初高中学生协作学习人工智能"}>
-          <img className="hero-student-art" src={visuals.heroStudent} alt="" fetchPriority="high" />
-          <img className="hero-mascot-art" src={visuals.mascot} alt="" fetchPriority="high" />
-          <img className="hero-accent-art hero-accent-one" src={visuals.encouragement} alt="" aria-hidden="true" />
-          <img className="hero-accent-art hero-accent-two" src={visuals.science} alt="" aria-hidden="true" />
-          <span>{primary ? "小智陪你边玩边学" : "从理解到实践，步步有反馈"}</span>
-        </div>
-      </section>
+      {primary ? (
+        <section className="primary-sky" aria-label="今日冒险">
+          <div className="primary-sky-copy">
+            <p className="eyebrow"><Sparkles size={14} />小学低年级 · AI 冒险乐园</p>
+            <h1>今天去哪儿探险？</h1>
+            <p>跟小智一起听故事、找线索、收集星星！</p>
+          </div>
+          <img className="primary-sky-art" src={visuals.mascot} alt="小智向你打招呼" />
+        </section>
+      ) : (
+        <section className="teen-stage" aria-label="当前实验">
+          <div className="teen-stage-copy">
+            <p className="eyebrow teen-stage-eyebrow">AI 创想实验室 · 图像分类</p>
+            <h1>让 AI 看见你眼中的世界</h1>
+            <p>今天要解决的问题：AI 是怎么从一张照片里认出小猫的？</p>
+            <div className="hero-actions">
+              <button className="button teen-cta" type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}><Play size={17} />开启图像分类实验</button>
+              <button className="text-button teen-stage-alt" type="button" onClick={() => onAskTopic?.({ title: "图像分类", code: "image-classification" })}>先看动画讲解<ArrowRight size={16} /></button>
+            </div>
+          </div>
+          <div className="teen-pipeline" aria-label="图像分类过程示意">
+            <span className="teen-pipe-node"><Camera size={20} />照片</span>
+            <span className="teen-pipe-arrow" aria-hidden="true">→</span>
+            <span className="teen-pipe-node"><ScanSearch size={20} />特征提取</span>
+            <span className="teen-pipe-arrow" aria-hidden="true">→</span>
+            <span className="teen-pipe-node"><Cat size={20} />预测：小猫</span>
+          </div>
+          <p className="teen-stage-note">上图为图像分类过程示意；你的实际进度以课程学习记录为准。</p>
+        </section>
+      )}
 
       {primary && (
-        <section className="primary-adventure-strip" aria-label="小学端学习入口">
-          <button className="primary-featured-lesson" type="button" onClick={() => navigate("picture-books")}>
-            <img src={visuals.reading} alt="" /><div><small>绘本专题</small><strong>走进小智互动绘本馆</strong><p>听故事、看图片，再完成一个趣味挑战。</p></div><ArrowRight size={18} />
-          </button>
-          <button type="button" onClick={() => navigate("visual-code-lab")}>
-            <img src={visuals.code} alt="" /><div><small>动手创造</small><strong>图形化编程闯关</strong><p>拖动积木，让角色完成任务。</p></div><ArrowRight size={18} />
-          </button>
-          <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}>
-            <img src={visuals.reading} alt="" /><div><small>故事学习</small><strong>听小智讲 AI 故事</strong><p>用熟悉的生活例子认识 AI。</p></div><ArrowRight size={18} />
-          </button>
-          <button type="button" onClick={() => navigate("tasks")}>
-            <img src={visuals.tasks} alt="" /><div><small>趣味挑战</small><strong>完成今天的小任务</strong><p>答题、练习，收集成长记录。</p></div><ArrowRight size={18} />
-          </button>
+        <section className="primary-quest" aria-label="今日冒险主任务">
+          <article className="primary-quest-card">
+            <div className="primary-quest-copy">
+              <small>今日冒险主任务</small>
+              <h2>AI 为什么能认出小猫？</h2>
+              <p>像小侦探一样找线索，看看 AI 是怎么认出小猫的。</p>
+              <button className="primary-cta" type="button" onClick={() => navigate("cat-lesson")}>开始今天的冒险<ArrowRight size={18} /></button>
+            </div>
+            <img src={visuals.heroStudent} alt="学生探险家插画" loading="lazy" />
+          </article>
+          <ol className="primary-map" aria-label="冒险地图">
+            <li><button type="button" onClick={() => navigate("picture-books")}><span className="primary-map-step primary-map-step-blue"><BookOpen size={18} /></span><strong>听故事</strong><small>去互动绘本馆</small></button></li>
+            <li><button type="button" onClick={() => navigate("cat-lesson")}><span className="primary-map-step primary-map-step-orange"><Search size={18} /></span><strong>找小猫</strong><small>完成小猫侦探课</small></button></li>
+            <li><button type="button" onClick={() => navigate("progress")}><span className="primary-map-step primary-map-step-mint"><Star size={18} /></span><strong>收星星</strong><small>看看我的成长</small></button></li>
+          </ol>
         </section>
       )}
 
@@ -147,12 +151,30 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         )}
       </section>
 
-      <section className="home-section home-shortcuts">
-        <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.ai} alt="" /><div><strong>{primary ? "问问小智" : "AI 学习台"}</strong><p>{primary ? "有问题随时问，也可以听故事" : "主题讲解、动画步骤与课堂小测"}</p></div><ArrowRight size={18} /></button>
-        <button type="button" onClick={() => navigate("courses")}><img src={visuals.courses} alt="" /><div><strong>{primary ? "继续探索" : "继续课程"}</strong><p>{primary ? "回到上次学习的有趣知识" : "从上次离开的知识点继续学习"}</p></div><ArrowRight size={18} /></button>
-        <button type="button" onClick={() => navigate("tasks")}><img src={visuals.tasks} alt="" /><div><strong>{primary ? "今日挑战" : "今日作业"}</strong><p>{primary ? "完成老师布置的小任务" : "查看截止时间和待完成练习"}</p></div><ArrowRight size={18} /></button>
-        <button type="button" onClick={() => navigate("progress")}><img src={visuals.progress} alt="" /><div><strong>{primary ? "成长记录" : "学习报告"}</strong><p>{primary ? "看看新进步和获得的成绩" : "了解本周进度和薄弱知识点"}</p></div><ArrowRight size={18} /></button>
-      </section>
+      {primary ? (
+        <section className="home-section home-shortcuts">
+          <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.ai} alt="" /><div><strong>问问小智</strong><p>有问题随时问，也可以听故事</p></div><ArrowRight size={18} /></button>
+          <button type="button" onClick={() => navigate("courses")}><img src={visuals.courses} alt="" /><div><strong>继续探索</strong><p>回到上次学习的有趣知识</p></div><ArrowRight size={18} /></button>
+          <button type="button" onClick={() => navigate("tasks")}><img src={visuals.tasks} alt="" /><div><strong>今日挑战</strong><p>完成老师布置的小任务</p></div><ArrowRight size={18} /></button>
+          <button type="button" onClick={() => navigate("progress")}><img src={visuals.progress} alt="" /><div><strong>成长记录</strong><p>看看新进步和获得的成绩</p></div><ArrowRight size={18} /></button>
+        </section>
+      ) : (
+        <>
+          <section className="home-section teen-actions" aria-label="学习行动">
+            <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.ai} alt="" /><div><small>看懂原理</small><strong>AI 学习台讲解</strong><p>看动画、分步讲清图像分类的原理。</p></div><ArrowRight size={18} /></button>
+            <button type="button" onClick={() => navigate("code-lab")}><img src={visuals.code} alt="" /><div><small>动手试</small><strong>代码实验室</strong><p>写几行代码，跑出真实的运行结果。</p></div><ArrowRight size={18} /></button>
+            <button type="button" onClick={() => navigate("progress")}><img src={visuals.progress} alt="" /><div><small>看反馈</small><strong>学习报告</strong><p>查看知识点掌握度、错因和下一步建议。</p></div><ArrowRight size={18} /></button>
+          </section>
+          <section className="teen-challenge" aria-label="迁移挑战">
+            <div>
+              <small>迁移挑战</small>
+              <strong>模型为什么会把两张相似图片分错？</strong>
+              <p>带着你的猜想去找 AI 教练验证，看看判断依据藏在哪里。</p>
+            </div>
+            <button className="button ghost teen-challenge-cta" type="button" onClick={() => onAskTopic?.({ title: "模型为什么会把两张相似图片分错", code: "classification-errors" })}>去问 AI 教练<ArrowRight size={16} /></button>
+          </section>
+        </>
+      )}
     </div>
   );
 }
