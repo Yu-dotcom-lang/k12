@@ -18,7 +18,7 @@ export async function api(path, options = {}) {
     ...requestOptions,
     headers: {
       ...(requestOptions.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(!publicRequest && session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...(!publicRequest && session?.accessToken ? { Authorization: `Bearer ${session.accessToken}`, "X-K12-Token": session.accessToken } : {}),
       ...headers,
     },
   });
@@ -38,7 +38,7 @@ async function apiBlob(path, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}`, "X-K12-Token": session.accessToken } : {}),
       ...(options.headers || {}),
     },
   });

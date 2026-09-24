@@ -32,7 +32,7 @@ export async function api(path, options = {}) {
     ...fetchOptions,
     headers: {
       ...(fetchOptions.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(!publicRequest && session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...(!publicRequest && session?.accessToken ? { Authorization: `Bearer ${session.accessToken}`, "X-K12-Token": session.accessToken } : {}),
       ...options.headers,
     },
   });
