@@ -4714,3 +4714,46 @@ body:has(main.experience-primary) {
 .experience-primary .home-shortcuts > button:hover { background: #f3f7ff; }
 .experience-primary .home-shortcuts > button > img { transition: transform 0.2s ease; }
 .experience-primary .home-shortcuts > button:hover > img { transform: translateY(-3px) scale(1.06); }
+
+/* ---- 小学端可读性修复：背景上的文字全部落到浅色表面 (2026-09-25) ---- */
+
+/* 1) 内页整体磨砂底板：星空从边缘和玻璃后透出，所有文字落在浅色表面 */
+.experience-primary .inner-page,
+.experience-primary .page-loading {
+  padding-top: clamp(30px, 3.4vw, 48px);
+  padding-bottom: clamp(40px, 4.4vw, 64px);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(22px) saturate(1.12);
+  backdrop-filter: blur(22px) saturate(1.12);
+  box-shadow:
+    0 26px 52px -30px rgba(40, 50, 130, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* 2) 成长页右侧卡片（学习档案 / AI 课堂小测等）：补白底成真正的卡片 */
+.experience-primary .report-side > section {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 26px -18px rgba(23, 32, 94, 0.4);
+}
+
+/* 3) 首页栏目标题（小智今日安排 / 选择一场新的探索）：白色光晕 + 玻璃说明条 */
+.experience-primary .home-page .section-heading h2 {
+  color: #17304b;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65),
+    0 0 16px rgba(255, 255, 255, 0.95),
+    0 0 30px rgba(255, 255, 255, 0.75);
+}
+.experience-primary .home-page .section-heading p {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 7px 14px;
+  border-radius: 14px;
+  color: #24365a;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 16px -10px rgba(40, 50, 130, 0.5);
+}
