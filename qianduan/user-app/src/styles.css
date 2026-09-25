@@ -5146,3 +5146,81 @@ body:has(main.experience-teen)::before {
 /* -- 14. 实验室关卡选中态：统一亮青（teen 克制版） -- */
 .experience-teen .visual-mission-rail button.active { color: #14586b; background: #e8f3f1; box-shadow: inset 0 3px 0 #1c8790; }
 .experience-teen .visual-mission-rail button[class*="theme-"].active { box-shadow: inset 0 3px 0 #1c8790; }
+
+/* ==================================================================
+   中学端 · 沉浸式世界底 v2（2026-09-25）
+   对齐小学端体验：场景母图 fixed 铺满全站视口（含首页之外的所有页面），
+   顶栏/页脚/首页各区块/内页全部浮在毛玻璃面板上。
+   ================================================================== */
+
+/* -- 1. 世界底：整页 fixed 场景图 + 顶部深青渐层承托首屏文字 -- */
+body:has(main.experience-teen) {
+  background:
+    linear-gradient(180deg, rgba(8, 31, 40, .58) 0%, rgba(8, 31, 40, .30) 30vh, rgba(222, 237, 233, .16) 62vh, rgba(222, 237, 233, .30) 100vh),
+    url("/assets/experience/teen/research-academy.webp") center top / cover no-repeat fixed #0d2833;
+}
+/* 照片世界上的网格光束与极光撤掉，保持画面干净 */
+body:has(main.experience-teen)::before { content: none; }
+body:has(main.experience-teen)::after {
+  background-image:
+    radial-gradient(closest-side, rgba(28, 135, 144, .12), transparent 72%),
+    radial-gradient(closest-side, rgba(34, 87, 106, .10), transparent 72%),
+    radial-gradient(closest-side, rgba(251, 209, 119, .08), transparent 74%);
+}
+
+/* -- 2. 顶栏/页脚：玻璃拟态，透出云海世界 -- */
+.experience-teen .site-header {
+  border-bottom-color: rgba(34, 87, 106, .14);
+  background: rgba(252, 254, 252, .74);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+}
+.experience-teen .site-footer {
+  border-top-color: rgba(34, 87, 106, .14);
+  background: rgba(252, 254, 252, .72);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border-radius: 24px 24px 0 0;
+}
+
+/* -- 3. 首页首屏：改为透明舞台，直接露出世界底图（去掉内嵌图与全出血暗框） -- */
+.research-stage {
+  background: linear-gradient(100deg, rgba(8, 31, 40, .72) 0%, rgba(8, 31, 40, .42) 30%, rgba(8, 31, 40, .10) 55%, rgba(8, 31, 40, 0) 72%);
+  box-shadow: none;
+  clip-path: none;
+}
+.research-stage .teen-stage-note { color: rgba(240, 248, 250, .78); text-shadow: 0 1px 10px rgba(8, 31, 40, .55); }
+
+/* -- 4. 首页其余区块：统一浮层毛玻璃面板 -- */
+.experience-teen .home-page > :not(.research-stage) {
+  border: 1px solid rgba(255, 255, 255, .55);
+  border-radius: 24px;
+  background: rgba(253, 255, 250, .82);
+  backdrop-filter: blur(20px) saturate(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  box-shadow: 0 26px 52px -34px rgba(8, 31, 40, .5);
+}
+.experience-teen .home-page > .home-section { padding-inline: clamp(20px, 2.6vw, 34px); }
+.experience-teen .home-page > .learning-rhythm { padding-inline: clamp(20px, 2.6vw, 34px); }
+
+/* -- 5. 内页面板：升级为毛玻璃，让世界隐约透出 -- */
+.experience-teen .page.inner-page {
+  border-color: rgba(255, 255, 255, .55);
+  background: rgba(253, 255, 250, .88);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  box-shadow: 0 30px 60px -34px rgba(8, 31, 40, .55);
+}
+
+/* -- 6. 移动端：世界底裁切保留穹顶识别点；首屏渐层加强 -- */
+@media (max-width: 768px) {
+  body:has(main.experience-teen) {
+    background:
+      linear-gradient(180deg, rgba(8, 31, 40, .66) 0%, rgba(8, 31, 40, .38) 30vh, rgba(222, 237, 233, .2) 62vh, rgba(222, 237, 233, .32) 100vh),
+      url("/assets/experience/teen/research-academy.webp") 68% top / cover no-repeat fixed #0d2833;
+  }
+  .research-stage {
+    background: linear-gradient(100deg, rgba(8, 31, 40, .88) 0%, rgba(8, 31, 40, .56) 46%, rgba(8, 31, 40, .18) 76%, rgba(8, 31, 40, 0) 100%);
+  }
+  .experience-teen .home-page > :not(.research-stage) { border-radius: 18px; }
+}
