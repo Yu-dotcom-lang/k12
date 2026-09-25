@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, BookOpen, Camera, Cat, ChevronLeft, ChevronRight, ClipboardCheck, Gamepad2, LoaderCircle, MessageCircle, Play, ScanSearch, Send, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, ChevronLeft, ChevronRight, ClipboardCheck, Eye, FlaskConical, Gamepad2, LoaderCircle, MessageCircle, Play, Send, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { coursesApi } from "../api/client.js";
 import { DailyLearningPlan } from "../components/DailyLearningPlan.jsx";
@@ -149,24 +149,53 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
           </section>
         </div>
       ) : (
-        <section className="teen-stage" aria-label="当前实验">
+        <section className="teen-stage research-stage" aria-label="云端 AI 研究学院">
           <div className="teen-stage-copy">
-            <p className="eyebrow teen-stage-eyebrow">AI 创想实验室 · 图像分类</p>
+            <p className="eyebrow teen-stage-eyebrow">云端 AI 研究学院 · 图像分类专题</p>
             <h1>让 AI 看见你眼中的世界</h1>
-            <p>今天要解决的问题：AI 是怎么从一张照片里认出小猫的？</p>
+            <p>研究问题：AI 是怎么从一张照片里认出小猫的？带着它去观察、实验，找到你自己的解释。</p>
             <div className="hero-actions">
-              <button className="button teen-cta" type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}><Play size={17} />开启图像分类实验</button>
-              <button className="text-button teen-stage-alt" type="button" onClick={() => onAskTopic?.({ title: "图像分类", code: "image-classification" })}>先看动画讲解<ArrowRight size={16} /></button>
+              <button className="button teen-cta" type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}><Play size={17} />开始今天的研究</button>
+              <button className="text-button teen-stage-alt" type="button" onClick={() => onAskTopic?.({ title: "图像分类", code: "image-classification" })}>先看特征动画<ArrowRight size={16} /></button>
             </div>
           </div>
-          <div className="teen-pipeline" aria-label="图像分类过程示意">
-            <span className="teen-pipe-node"><Camera size={20} />照片</span>
-            <span className="teen-pipe-arrow" aria-hidden="true">→</span>
-            <span className="teen-pipe-node"><ScanSearch size={20} />特征提取</span>
-            <span className="teen-pipe-arrow" aria-hidden="true">→</span>
-            <span className="teen-pipe-node"><Cat size={20} />预测：小猫</span>
+          <div className="research-path" aria-label="研究路径">
+            <header className="research-path-head">
+              <h2>今天的研究路径</h2>
+              <p>AI 是怎么从一张照片里认出小猫的？</p>
+            </header>
+            <ol className="research-path-steps">
+              <li>
+                <button type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}>
+                  <span className="research-step-no"><Eye size={16} />01</span>
+                  <strong>观察</strong>
+                  <small>看特征动画，找出 AI 认猫的线索</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("code-lab")}>
+                  <span className="research-step-no"><FlaskConical size={16} />02</span>
+                  <strong>理解</strong>
+                  <small>进实验室做分类实验，弄懂原理</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}>
+                  <span className="research-step-no"><MessageCircle size={16} />03</span>
+                  <strong>验证</strong>
+                  <small>向 AI 教练求证你的猜想</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("progress")}>
+                  <span className="research-step-no"><ClipboardCheck size={16} />04</span>
+                  <strong>解释</strong>
+                  <small>整理证据，写下你的结论</small>
+                </button>
+              </li>
+            </ol>
           </div>
-          <p className="teen-stage-note">上图为图像分类过程示意；你的实际进度以课程学习记录为准。</p>
+          <p className="teen-stage-note">研究路径对应真实学习入口；你的完成进度以课程学习记录为准。</p>
         </section>
       )}
 
@@ -204,10 +233,10 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         </section>
       ) : (
         <>
-          <section className="home-section teen-actions" aria-label="学习行动">
-            <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.ai} alt="" /><div><small>看懂原理</small><strong>AI 学习台讲解</strong><p>看动画、分步讲清图像分类的原理。</p></div><ArrowRight size={18} /></button>
-            <button type="button" onClick={() => navigate("code-lab")}><img src={visuals.code} alt="" /><div><small>动手试</small><strong>代码实验室</strong><p>写几行代码，跑出真实的运行结果。</p></div><ArrowRight size={18} /></button>
-            <button type="button" onClick={() => navigate("progress")}><img src={visuals.progress} alt="" /><div><small>看反馈</small><strong>学习报告</strong><p>查看知识点掌握度、错因和下一步建议。</p></div><ArrowRight size={18} /></button>
+          <section className="home-section teen-actions" aria-label="研究入口">
+            <button type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}><img src={visuals.ai} alt="" /><div><small>观察</small><strong>特征动画</strong><p>看动画、分步看清 AI 提取了哪些特征。</p></div><ArrowRight size={18} /></button>
+            <button type="button" onClick={() => navigate("code-lab")}><img src={visuals.code} alt="" /><div><small>实验</small><strong>分类实验</strong><p>亲手调整参数，跑出真实的分类结果。</p></div><ArrowRight size={18} /></button>
+            <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.science} alt="" /><div><small>解释</small><strong>解释判断</strong><p>和 AI 教练对话，说出并检验判断依据。</p></div><ArrowRight size={18} /></button>
           </section>
           <section className="teen-challenge" aria-label="迁移挑战">
             <div>
