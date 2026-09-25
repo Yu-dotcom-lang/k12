@@ -77,18 +77,77 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
       </aside>
 
       {primary ? (
-        <section className="primary-space-hero" aria-label="AI 星球学院">
-          <span className="primary-planet primary-planet-glow" aria-hidden="true" />
-          <span className="primary-planet primary-planet-ring" aria-hidden="true" />
-          <span className="primary-planet primary-planet-mini" aria-hidden="true" />
-          <div className="primary-space-copy">
-            <p className="primary-brand">AI 星球学院</p>
-            <p className="primary-brand-slogan">用好奇心，点亮更大的世界！</p>
-            <h1 className="primary-space-greet">今天去哪儿探险？</h1>
-            <p className="primary-space-note"><Sparkles size={16} />每一个问题，都是一颗闪闪发光的星星</p>
-          </div>
-          <img className="primary-space-art" src={visuals.mascot} alt="小智向你打招呼" />
-        </section>
+        <div className="primary-stage">
+          <svg className="primary-stage-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path
+              d="M 78 16 C 92 28, 64 34, 34 41 C 22 44, 12 46, 4 49"
+              fill="none"
+              stroke="rgba(255, 255, 255, 0.8)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="0.3 2.6"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <span className="primary-stage-cloud primary-stage-cloud-a" aria-hidden="true" />
+          <span className="primary-stage-cloud primary-stage-cloud-b" aria-hidden="true" />
+          <span className="primary-stage-cloud primary-stage-cloud-c" aria-hidden="true" />
+          <span className="primary-stage-warmth" aria-hidden="true" />
+          <section className="primary-space-hero" aria-label="AI 星球学院">
+            <div className="primary-space-copy">
+              <p className="primary-brand">AI 星球学院</p>
+              <p className="primary-brand-slogan">用好奇心，点亮更大的世界！</p>
+              <h1 className="primary-space-greet">今天去哪儿探险？</h1>
+              <p className="primary-space-note"><Sparkles size={16} />每一个问题，都是一颗闪闪发光的星星</p>
+            </div>
+            <div className="primary-stage-cast">
+              <span className="primary-cast-bubble" aria-hidden="true">跟我去找小猫线索！</span>
+              <img className="primary-space-art" src={visuals.mascot} alt="小智为你带路" />
+              <img className="primary-cast-explorer" src={visuals.heroStudent} alt="" aria-hidden="true" loading="lazy" />
+            </div>
+          </section>
+          <section className="primary-quest" aria-label="和小智聊聊 · 今日冒险">
+            <span className="primary-stage-badge" aria-hidden="true">第 1 站</span>
+            <article className="primary-chat-card">
+              <header className="primary-chat-head">
+                <img className="primary-chat-avatar" src={visuals.mascot} alt="" aria-hidden="true" />
+                <div className="primary-chat-title">
+                  <h2>和小智聊聊<span className="primary-online"><span aria-hidden="true" />在线</span></h2>
+                  <p>有问题就来找我吧！一起探索更大的世界～</p>
+                </div>
+              </header>
+              <div className="primary-quest-body">
+                <small>今日冒险主任务</small>
+                <strong>AI 为什么能认出小猫？</strong>
+                <p>像小侦探一样找线索，看看 AI 是怎么认出小猫的。</p>
+                <button className="primary-cta" type="button" onClick={() => navigate("cat-lesson")}>开始今天的冒险<ArrowRight size={18} /></button>
+              </div>
+              <div className="primary-chips">
+                <button type="button" className="primary-chip primary-chip-red" onClick={() => navigate("picture-books")}>
+                  <span className="primary-chip-icon"><Play size={22} /></span>
+                  <span className="primary-chip-copy"><strong>看动画</strong><small>用有趣的动画学知识</small></span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
+                <button type="button" className="primary-chip primary-chip-green" onClick={() => navigate("cat-lesson")}>
+                  <span className="primary-chip-icon"><BookOpen size={22} /></span>
+                  <span className="primary-chip-copy"><strong>图解原理</strong><small>一图看懂 AI 怎么认猫</small></span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
+                <button type="button" className="primary-chip primary-chip-yellow" onClick={() => navigate("tasks")}>
+                  <span className="primary-chip-icon"><Gamepad2 size={22} /></span>
+                  <span className="primary-chip-copy"><strong>来个小游戏</strong><small>试试让 AI 认出更多动物</small></span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
+              </div>
+              <button type="button" className="primary-askbar" onClick={() => requireLogin(() => navigate("ai-studio"))}>
+                <span className="primary-askbar-lead"><MessageCircle size={18} /></span>
+                <span className="primary-askbar-text">问问小智任何问题…</span>
+                <span className="primary-askbar-send"><Send size={16} /></span>
+              </button>
+              <p className="primary-quest-foot">✨ 好问题，让你离更大的世界更近一步！✨</p>
+            </article>
+          </section>
+        </div>
       ) : (
         <section className="teen-stage" aria-label="当前实验">
           <div className="teen-stage-copy">
@@ -108,50 +167,6 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
             <span className="teen-pipe-node"><Cat size={20} />预测：小猫</span>
           </div>
           <p className="teen-stage-note">上图为图像分类过程示意；你的实际进度以课程学习记录为准。</p>
-        </section>
-      )}
-
-      {primary && (
-        <section className="primary-quest" aria-label="和小智聊聊 · 今日冒险">
-          <article className="primary-chat-card">
-            <header className="primary-chat-head">
-              <img className="primary-chat-avatar" src={visuals.mascot} alt="" aria-hidden="true" />
-              <div className="primary-chat-title">
-                <h2>和小智聊聊<span className="primary-online"><span aria-hidden="true" />在线</span></h2>
-                <p>有问题就来找我吧！一起探索更大的世界～</p>
-              </div>
-              <img className="primary-chat-sticker" src={visuals.heroStudent} alt="" aria-hidden="true" loading="lazy" />
-            </header>
-            <div className="primary-quest-body">
-              <small>今日冒险主任务</small>
-              <strong>AI 为什么能认出小猫？</strong>
-              <p>像小侦探一样找线索，看看 AI 是怎么认出小猫的。</p>
-              <button className="primary-cta" type="button" onClick={() => navigate("cat-lesson")}>开始今天的冒险<ArrowRight size={18} /></button>
-            </div>
-            <div className="primary-chips">
-              <button type="button" className="primary-chip primary-chip-red" onClick={() => navigate("picture-books")}>
-                <span className="primary-chip-icon"><Play size={22} /></span>
-                <span className="primary-chip-copy"><strong>看动画</strong><small>用有趣的动画学知识</small></span>
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
-              <button type="button" className="primary-chip primary-chip-green" onClick={() => navigate("cat-lesson")}>
-                <span className="primary-chip-icon"><BookOpen size={22} /></span>
-                <span className="primary-chip-copy"><strong>图解原理</strong><small>一图看懂 AI 怎么认猫</small></span>
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
-              <button type="button" className="primary-chip primary-chip-yellow" onClick={() => navigate("tasks")}>
-                <span className="primary-chip-icon"><Gamepad2 size={22} /></span>
-                <span className="primary-chip-copy"><strong>来个小游戏</strong><small>试试让 AI 认出更多动物</small></span>
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
-            </div>
-            <button type="button" className="primary-askbar" onClick={() => requireLogin(() => navigate("ai-studio"))}>
-              <span className="primary-askbar-lead"><MessageCircle size={18} /></span>
-              <span className="primary-askbar-text">问问小智任何问题…</span>
-              <span className="primary-askbar-send"><Send size={16} /></span>
-            </button>
-            <p className="primary-quest-foot">✨ 好问题，让你离更大的世界更近一步！✨</p>
-          </article>
         </section>
       )}
 

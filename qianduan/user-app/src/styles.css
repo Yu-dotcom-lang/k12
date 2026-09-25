@@ -4345,3 +4345,162 @@ body:has(main.experience-primary)::after {
 }
 
 .primary-planet { display: none; }
+
+/* ==================================================================
+   小学端首屏 · 探险舞台（依据 小学低年级AI学习台背景修改方案.md）
+   层级：路线/云/暖光(z0) < 内容区(z1) < 角色组合(z2) < 徽章(z3)
+   ================================================================== */
+.primary-stage { position: relative; }
+.primary-stage > section { position: relative; z-index: 1; }
+
+/* -- 留白压缩：标题与任务卡靠拢，卡片加宽 -- */
+.primary-stage .primary-space-hero {
+  margin-top: 12px;
+  padding: clamp(26px, 3.4vw, 44px) clamp(24px, 4vw, 52px) clamp(14px, 1.8vw, 24px);
+}
+.primary-stage .primary-chat-card { max-width: 1180px; margin-top: 6px; }
+.primary-stage .primary-quest { margin-top: 0; }
+
+/* -- 中景：探险路线（虚点曲线，从角色通向第 1 站） -- */
+.primary-stage-route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* "第 1 站"徽章：钉在任务卡左上沿 */
+.primary-stage-badge {
+  position: absolute;
+  top: -15px;
+  left: clamp(10px, 3%, 44px);
+  z-index: 3;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffdd70, #ffc653);
+  color: #17304b;
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 14px rgba(40, 40, 120, 0.35), 0 0 0 3px rgba(255, 255, 255, 0.65);
+}
+
+/* -- 近景：角色组合（小智 + 探险家），下缘与任务卡相接 -- */
+.primary-stage-cast {
+  position: relative;
+  z-index: 2;
+  align-self: end;
+  justify-self: center;
+  text-align: center;
+  margin-bottom: -34px;
+}
+.primary-stage-cast .primary-space-art { width: min(210px, 54%); }
+.primary-cast-explorer {
+  width: 94px;
+  margin: -12px 0 0 56%;
+  transform: rotate(4deg);
+  filter: drop-shadow(0 10px 16px rgba(40, 40, 120, 0.4));
+}
+.primary-cast-bubble {
+  position: absolute;
+  top: -8px;
+  left: -30px;
+  padding: 7px 13px;
+  border-radius: 14px 14px 14px 4px;
+  background: #ffffff;
+  color: #2452d8;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(30, 40, 110, 0.28);
+  animation: k12-deco-bob-a 6s ease-in-out infinite alternate;
+}
+
+/* -- 远景：浅色云朵与角色附近暖光（8%–14%，不进卡片正文） -- */
+.primary-stage-cloud { position: absolute; z-index: 0; pointer-events: none; }
+
+.primary-stage-cloud::before,
+.primary-stage-cloud::after {
+  content: "";
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+}
+
+.primary-stage-cloud-a {
+  left: 4%;
+  top: 8%;
+  width: 120px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  animation: k12-stage-drift 11s ease-in-out infinite alternate;
+}
+.primary-stage-cloud-a::before { top: -18px; left: 22px; width: 52px; height: 52px; background: rgba(255, 255, 255, 0.14); }
+.primary-stage-cloud-a::after { top: -11px; right: 20px; width: 34px; height: 34px; background: rgba(255, 255, 255, 0.14); }
+
+.primary-stage-cloud-b {
+  right: 3%;
+  top: 46%;
+  width: 96px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  animation: k12-stage-drift 13s ease-in-out infinite alternate-reverse;
+}
+.primary-stage-cloud-b::before { top: -14px; left: 18px; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.12); }
+.primary-stage-cloud-b::after { top: -9px; right: 15px; width: 26px; height: 26px; background: rgba(255, 255, 255, 0.12); }
+
+.primary-stage-cloud-c {
+  left: 12%;
+  bottom: 4%;
+  width: 140px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  animation: k12-stage-drift 12s ease-in-out infinite alternate;
+}
+.primary-stage-cloud-c::before { top: -20px; left: 26px; width: 60px; height: 60px; background: rgba(255, 255, 255, 0.10); }
+.primary-stage-cloud-c::after { top: -12px; right: 24px; width: 38px; height: 38px; background: rgba(255, 255, 255, 0.10); }
+
+.primary-stage-warmth {
+  position: absolute;
+  right: 4%;
+  top: 4%;
+  width: min(460px, 40vw);
+  height: 340px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 214, 140, 0.17), transparent 72%);
+}
+
+@keyframes k12-stage-drift {
+  from { transform: translateX(-5px); }
+  to { transform: translateX(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-stage-cast .primary-space-art,
+  .primary-cast-bubble,
+  .primary-stage-cloud-a,
+  .primary-stage-cloud-b,
+  .primary-stage-cloud-c {
+    animation: none;
+  }
+}
+
+/* -- 手机端：单列、路线简化、主按钮占满 -- */
+@media (max-width: 760px) {
+  .primary-stage-route { display: none; }
+  .primary-stage .primary-space-hero { padding: 22px 18px 10px; }
+  .primary-stage-cast { margin-bottom: -16px; }
+  .primary-stage-cast .primary-space-art { width: 128px; }
+  .primary-cast-explorer { width: 60px; margin: -8px 0 0 52%; }
+  .primary-cast-bubble { left: 0; font-size: 11px; padding: 5px 10px; }
+  .primary-stage-badge { top: -12px; left: 14px; }
+  .primary-stage .primary-chat-card { padding: 18px 16px; }
+  .primary-cta { width: 100%; justify-content: center; }
+}
