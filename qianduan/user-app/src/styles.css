@@ -4319,3 +4319,29 @@ body:has(main.experience-primary)::after {
   .primary-chat-sticker { display: none; }
   .primary-chips { grid-template-columns: 1fr; }
 }
+
+/* ==================================================================
+   小学端背景 v2 —— 真实插画风星空图（替代纯 CSS 画布）
+   图片: /assets/experience/primary/sky-bg.webp (1024x1536, 底缘 #8e8dfb)
+   ================================================================== */
+body:has(main.experience-primary) {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(142, 141, 251, 0) 0vw,
+      rgba(142, 141, 251, 0) 138vw,
+      #8e8dfb 149vw,
+      #8e8dfb 162vw,
+      #eceafd 235vw
+    ),
+    url("/assets/experience/primary/sky-bg.webp") top center / 100% auto no-repeat,
+    #8e8dfb;
+}
+
+/* 插画图自带云海与星星，隐藏 CSS 云层/星点/星球，避免重复 */
+body:has(main.experience-primary)::before,
+body:has(main.experience-primary)::after {
+  display: none;
+}
+
+.primary-planet { display: none; }
