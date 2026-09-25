@@ -4847,3 +4847,17 @@ body:has(main.experience-primary) {
 .experience-primary .visual-code-lab-page .visual-learning-route > div:nth-child(2) > span { color: #0b7fca; background: #e5f3ff; }
 .experience-primary .visual-code-lab-page .visual-learning-route > div:nth-child(3) > span { color: #0f9d78; background: #e5f7f0; }
 .experience-primary .visual-code-lab-page .visual-learning-route > div:nth-child(4) > span { color: #d97424; background: #fff1e0; }
+
+/* ---- 小智陪学引导卡：图片卡展示 (2026-09-25) ---- */
+.guided-turn .practice-quiz-visual {
+  width: min(230px, 70%);
+  min-height: 0;
+  margin: 12px auto 14px;
+  border: 2px solid #d9ecf5;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 22px -14px rgba(23, 32, 94, 0.4);
+  overflow: hidden;
+}
+.guided-turn .practice-quiz-visual.image img { width: 100%; max-height: 230px; border-radius: 16px; }
+.guided-turn .practice-quiz-visual.emoji { padding: 18px 0; font-size: 74px; }

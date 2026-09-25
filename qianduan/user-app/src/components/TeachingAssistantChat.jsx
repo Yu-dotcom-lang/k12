@@ -411,6 +411,7 @@ function GuidedChoices({ guidedTurn, active, disabled, onChoose }) {
         </div>
       </header>
       {guidedTurn.encouragement && <p>{guidedTurn.encouragement}</p>}
+      <QuestionVisual visual={guidedTurn.visual} />
       <div className="guided-choice-list">
         {guidedTurn.choices.slice(0, 3).map((choice) => (
           <button

@@ -116,7 +116,7 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
         phase = ("LOOK", "THINK", "TRY")[phase_index]
         metadata = dict(result.metadata)
         topic = str(metadata.get("topic") or "今天的 AI 小发现")
-        quiz_question, quiz_choices = self._first_quiz_prompt(result.artifacts)
+        quiz_question, quiz_choices, quiz_visual = self._first_quiz_prompt(result.artifacts)
 
         if phase == "LOOK":
             detail = self._section_text(result.output_text, "概念解释")
@@ -150,7 +150,7 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
             encouragement = "答错也没关系，小智会陪你一起找答案。"
 
         metadata["workflow"] = "lower-primary-guided-v1"
-        metadata["guidedConversation"] = {
+        guided_conversation = {
             "schemaVersion": "1.0",
             "mode": "SHORT_TURN",
             "phase": phase,
@@ -162,6 +162,9 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
             "progressTotal": 3,
             "encouragement": encouragement,
         }
+        if quiz_visual:
+            guided_conversation["visual"] = quiz_visual
+        metadata["guidedConversation"] = guided_conversation
         return replace(result, output_text=output_text, metadata=metadata)
 
     @staticmethod
@@ -177,7 +180,7 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
     @staticmethod
     def _first_quiz_prompt(
         artifacts: tuple[AgentArtifact, ...],
-    ) -> tuple[str | None, list[dict[str, str]]]:
+    ) -> tuple[str | None, list[dict[str, str]], dict[str, str] | None]:
         for artifact in artifacts:
             if artifact.kind is not AgentArtifactKind.GAME:
                 continue
@@ -188,6 +191,8 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
             if not isinstance(question, dict):
                 continue
             prompt = str(question.get("prompt") or "").strip() or None
+            visual = question.get("visual")
+            visual = dict(visual) if isinstance(visual, dict) and visual.get("value") else None
             choices: list[dict[str, str]] = []
             options = question.get("options", [])
             if isinstance(options, list):
@@ -204,8 +209,8 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
                             "value": label,
                         }
                     )
-            return prompt, choices
-        return None, []
+            return prompt, choices, visual
+        return None, [], None
 
     @staticmethod
     def _section_text(markdown: str, heading: str, limit: int = 120) -> str:
