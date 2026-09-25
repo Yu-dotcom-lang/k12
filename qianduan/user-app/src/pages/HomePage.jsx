@@ -60,6 +60,22 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
 
   return (
     <div className="page home-page">
+      {primary && (
+        <div className="primary-side-deco" aria-hidden="true">
+          <span className="primary-side-cloud primary-side-cloud-1" />
+          <span className="primary-side-cloud primary-side-cloud-2" />
+          <span className="primary-side-cloud primary-side-cloud-3" />
+          <span className="primary-side-star primary-side-star-1 primary-side-float-a" />
+          <span className="primary-side-star primary-side-star-2 primary-side-float-b" />
+          <span className="primary-side-star primary-side-star-3 primary-side-float-a" />
+          <span className="primary-side-star primary-side-star-4 primary-side-float-b" />
+          <span className="primary-side-balloon primary-side-float-b" />
+          <img className="primary-side-float-a" src={visuals.reading} alt="" />
+          <img className="primary-side-float-b" src={visuals.science} alt="" />
+          <img className="primary-side-float-a" src={visuals.progress} alt="" />
+          <img className="primary-side-float-b" src={visuals.encouragement} alt="" />
+        </div>
+      )}
       <aside className="home-side-rail home-side-rail-left" aria-label="今日学习入口">
         <img src={visuals.mascot} alt="" aria-hidden="true" />
         <small>{primary ? "今天去哪里探险？" : "今日学习入口"}</small>
