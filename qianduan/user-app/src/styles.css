@@ -5014,3 +5014,135 @@ body:has(main.experience-teen)::after {
   .research-path-steps { grid-template-columns: 1fr; }
   .research-path-steps button { min-height: 0; }
 }
+
+/* ==================================================================
+   中学端 · 「云端研究学院」全站主题（2026-09-25）
+   作用域 .experience-teen（main 及内部站点头/页脚全部生效）
+   策略：1) 重定义全局 token 变量，让按钮/眉标/进度条/分段器等
+   既有组件自动换色；2) 组件级覆盖补齐面板、卡片、背景。
+   ================================================================== */
+
+/* -- 1. 主题 token：深海青 #22576A / 亮青 #1C8790 / 暖金 #FBD177 -- */
+.experience-teen {
+  --ink: #214857;
+  --muted: #5f8288;
+  --subtle: #8aa7ab;
+  --line: #dce9e5;
+  --line-strong: #c3d9d4;
+  --blue: #1c8790;
+  --blue-dark: #22576a;
+  --blue-soft: #e8f3f1;
+  --surface: #f4f8f6;
+  --yellow: #fbd177;
+  --teal: #1c8790;
+  color: var(--ink);
+}
+
+/* -- 2. 页面环境：云青色渐层 + 青金极光（覆盖旧蓝紫底色与光束） -- */
+body:has(main.experience-teen) {
+  background:
+    radial-gradient(1200px 700px at 88% -2%, rgba(28, 135, 144, .13), transparent 62%),
+    radial-gradient(1000px 640px at -8% 10%, rgba(251, 209, 119, .13), transparent 58%),
+    linear-gradient(180deg, #e9f4f1 0%, #edf6f3 560px, #f2f8f5 1400px, #f8fbf9 2200px);
+}
+body:has(main.experience-teen)::before {
+  background-image:
+    linear-gradient(115deg, transparent 40%, rgba(28, 135, 144, .08) 50%, transparent 60%),
+    linear-gradient(65deg, transparent 55%, rgba(34, 87, 106, .07) 63%, transparent 71%),
+    linear-gradient(rgba(34, 87, 106, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 87, 106, .07) 1px, transparent 1px);
+}
+
+/* -- 3. 顶栏与页脚：近白研究面板质感 -- */
+.experience-teen .site-header {
+  border-bottom-color: #dbe9e5;
+  background: rgba(253, 255, 250, .96);
+}
+.experience-teen .site-header nav button:hover,
+.experience-teen .site-header nav button.active { color: #22576a; }
+.experience-teen .site-footer { border-top-color: #dbe9e5; }
+
+/* -- 4. 内页统一「研究面板」：近白大圆角面板 -- */
+.experience-teen .page.inner-page {
+  padding-top: clamp(30px, 3.2vw, 48px);
+  padding-bottom: clamp(40px, 4.2vw, 64px);
+  border: 1px solid rgba(34, 87, 106, .08);
+  border-radius: 24px;
+  background: rgba(253, 255, 250, .92);
+  box-shadow: 0 26px 52px -34px rgba(34, 87, 106, .38);
+}
+.experience-teen .page-title h1 { color: #214857; }
+.experience-teen .section-heading h2 { color: #22576a; }
+
+/* -- 5. 按钮：主按钮深海青渐变，次按钮青色描边（主 CTA 暖金仅首屏使用） -- */
+.experience-teen .button.primary {
+  border-color: #1c8790;
+  background: linear-gradient(180deg, #2b98a1 0%, #1c8790 100%);
+  box-shadow: 0 6px 16px -8px rgba(28, 135, 144, .6);
+}
+.experience-teen .button.primary:hover { background: linear-gradient(180deg, #33a3ac 0%, #21939c 100%); }
+.experience-teen .button.secondary { color: #22576a; border-color: #bcdedb; }
+.experience-teen .button.secondary:hover { background: #e8f3f1; }
+
+/* -- 6. 课程卡：亮青 / 暖金 / 薄荷 三色顶边轮换 -- */
+.experience-teen .visual-course-card:nth-child(3n + 1) { border-top: 3px solid #1c8790; }
+.experience-teen .visual-course-card:nth-child(3n + 2) { border-top: 3px solid #d9a84e; }
+.experience-teen .visual-course-card:nth-child(3n) { border-top: 3px solid #34a88e; }
+.experience-teen .visual-course-card h3 { color: #214857; }
+.experience-teen .course-detail-card { border-top: 3px solid #1c8790; }
+
+/* -- 7. 今日学习计划：图标青色系 -- */
+.experience-teen .daily-plan-icon { color: #14586b; background: #e4f1f3; }
+
+/* -- 8. 学习报告：侧栏卡片白底浮起 -- */
+.experience-teen .report-side > section {
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 26px -18px rgba(34, 87, 106, .45);
+}
+
+/* -- 9. AI 实验室（积木关卡页）：研究学院色调的关卡英雄区 -- */
+.experience-teen .visual-lab-hero {
+  border-color: rgba(34, 87, 106, .12);
+  background: linear-gradient(135deg, #e8f3f1 0%, #f1f6f2 52%, #fbf5e8 100%);
+}
+
+/* -- 10. 排行榜英雄区：青色系描边卡 -- */
+.experience-teen .leaderboard-hero { color: #214857; }
+
+/* -- 11. 移动端内页面板留白收敛 -- */
+@media (max-width: 768px) {
+  .experience-teen .page.inner-page { border-radius: 18px; }
+}
+
+/* -- 12. 迁移挑战：整块由紫色系改为深海青系 -- */
+.experience-teen .teen-challenge {
+  border-color: #c9e0dc;
+  border-left-color: #1c8790;
+  background: linear-gradient(120deg, #eaf4f1 0%, #f7fbf9 100%);
+}
+.experience-teen .teen-challenge strong { color: #214857; }
+
+/* -- 13. 内页残留蓝色系 → 研究青（作业/课程/实验室/分段器） -- */
+.experience-teen .tasks-hero { border-color: #c9e0dc; border-left-color: #1c8790; background: linear-gradient(120deg, #eef6f3 0%, #fbfdfc 100%); }
+.experience-teen .subject-filter button:hover,
+.experience-teen .subject-filter button.active,
+.experience-teen .segmented-control button.active { border-color: #bcdedd; }
+.experience-teen .task-summary article.tone-submitted > svg,
+.experience-teen .task-icon.tone-submitted,
+.experience-teen .task-status-badge.tone-submitted { color: #14586b; background: #e4f1f3; }
+.experience-teen .task-summary article.tone-submitted strong { color: #14586b; }
+.experience-teen .task-board article.tone-submitted { border-left-color: #1c8790; }
+.experience-teen .calendar-dot.tone-submitted,
+.experience-teen .calendar-events > button > i.tone-submitted { background: #1c8790; }
+.experience-teen .course-overview-next small,
+.experience-teen .course-overview-next > span,
+.experience-teen .course-overview-next > button { color: #14586b; border-color: #bcdedd; }
+.experience-teen .code-login-notice,
+.experience-teen .artifact-download { border-color: #bcdedd; }
+.experience-teen .code-coach-bubble.user { background: linear-gradient(160deg, #2b98a1, #1c8790); }
+.experience-teen .notification-icon.tone-todo { color: #14586b; background: #e4f1f3; }
+
+/* -- 14. 实验室关卡选中态：统一亮青（teen 克制版） -- */
+.experience-teen .visual-mission-rail button.active { color: #14586b; background: #e8f3f1; box-shadow: inset 0 3px 0 #1c8790; }
+.experience-teen .visual-mission-rail button[class*="theme-"].active { box-shadow: inset 0 3px 0 #1c8790; }

@@ -109,7 +109,7 @@ export function AiStudioPage({
     <div className="page inner-page ai-studio-page">
       <header className="ai-studio-hero">
         <div className="ai-studio-hero-copy">
-          <p className="eyebrow"><Sparkles size={14} /> {primary ? "小智陪伴课堂" : "AI 通识主课堂"}</p>
+          <p className="eyebrow"><Sparkles size={14} /> {primary ? "小智陪伴课堂" : "云端研究学院 · AI 学习台"}</p>
           <h1 className="ai-studio-title">
             <span>{primary ? "问问小智" : "AI 学习台"}</span>
             <img className="ai-studio-title-doodle experience-title-sticker" src={visuals.ai} alt="" width={92} height={92} />
