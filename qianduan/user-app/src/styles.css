@@ -4537,3 +4537,180 @@ body:has(main.experience-primary) {
   backdrop-filter: blur(22px) saturate(1.15);
   box-shadow: 0 6px 24px rgba(40, 50, 130, 0.08);
 }
+
+/* ---- 小学端按钮优化 v2 · 糖果质感 (2026-09-25) ---- */
+
+/* 主按钮：渐变 + 顶部高光 + 扫光 + 按压 */
+.primary-cta {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffb08a 0%, #ff8c64 58%, #ff7f57 100%);
+  box-shadow:
+    0 7px 0 #e0663c,
+    0 18px 30px rgba(224, 106, 67, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55);
+}
+.primary-cta::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 42%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.primary-cta svg { transition: transform 0.15s ease; }
+.primary-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, #ffbfa0 0%, #ff9a74 58%, #ff8a60 100%);
+  box-shadow:
+    0 9px 0 #e0663c,
+    0 22px 36px rgba(224, 106, 67, 0.38),
+    inset 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+.primary-cta:hover::after { left: 130%; }
+.primary-cta:hover svg { transform: translateX(3px); }
+.primary-cta:active {
+  transform: translateY(5px);
+  box-shadow:
+    0 2px 0 #e0663c,
+    0 8px 14px rgba(224, 106, 67, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* 三色学习入口：白描边 + 内高光 + 彩色悬浮光晕 */
+.primary-chip {
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  box-shadow:
+    0 8px 18px -8px rgba(23, 32, 94, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+}
+.primary-chip:hover { transform: translateY(-3px); }
+.primary-chip > svg { transition: transform 0.15s ease; }
+.primary-chip:hover > svg { transform: translateX(3px); }
+.primary-chip-icon {
+  box-shadow:
+    inset 0 -2px 0 rgba(23, 48, 75, 0.06),
+    0 3px 8px rgba(23, 32, 94, 0.18);
+  transition: transform 0.18s ease;
+}
+.primary-chip:hover .primary-chip-icon { transform: scale(1.08) rotate(-4deg); }
+.primary-chip-red:hover {
+  box-shadow:
+    0 16px 28px -10px rgba(255, 122, 102, 0.6),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+}
+.primary-chip-green:hover {
+  box-shadow:
+    0 16px 28px -10px rgba(95, 216, 155, 0.6),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+}
+.primary-chip-yellow:hover {
+  box-shadow:
+    0 16px 28px -10px rgba(255, 198, 83, 0.65),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 提问栏：白卡质感 + 发送键 3D 按压 */
+.primary-askbar {
+  background: #ffffff;
+  border-width: 2.5px;
+  box-shadow: 0 10px 22px -12px rgba(23, 32, 94, 0.28);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.primary-askbar:hover {
+  border-color: #9db9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -12px rgba(47, 107, 255, 0.45);
+}
+.primary-askbar:active { transform: translateY(0); }
+.primary-askbar-lead { box-shadow: 0 3px 8px rgba(23, 32, 94, 0.12); }
+.primary-askbar-send {
+  background: linear-gradient(180deg, #5a95ff 0%, #2f6bff 100%);
+  box-shadow:
+    0 4px 0 #1e4fd6,
+    0 10px 18px rgba(47, 107, 255, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.primary-askbar:hover .primary-askbar-send { transform: translateY(-1px); }
+.primary-askbar:active .primary-askbar-send {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 #1e4fd6,
+    0 6px 10px rgba(47, 107, 255, 0.3);
+}
+
+/* 顶栏导航：药丸化，选中态变蓝色胶囊 */
+.experience-primary .site-header nav button {
+  min-height: 34px;
+  padding: 0 15px;
+  border-radius: 999px;
+  font-weight: 800;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+.experience-primary .site-header nav button:hover {
+  color: #2f6bff;
+  background: rgba(77, 140, 255, 0.12);
+}
+.experience-primary .site-header nav button.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4d8cff 0%, #2f6bff 100%);
+  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.35);
+}
+.experience-primary .site-header nav button.active::after { display: none; }
+
+/* 页面内通用按钮：圆角胶囊 + 轻按压 */
+.experience-primary .button {
+  border-radius: 999px;
+  font-weight: 800;
+  border: 0;
+  box-shadow:
+    0 4px 0 rgba(23, 48, 75, 0.15),
+    0 10px 20px -10px rgba(23, 32, 94, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease;
+}
+.experience-primary .button:hover { transform: translateY(-2px); filter: brightness(1.04); }
+.experience-primary .button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(23, 48, 75, 0.15);
+}
+.experience-primary .button.primary {
+  background: linear-gradient(180deg, #22a9d8 0%, #168fbe 100%);
+  box-shadow:
+    0 4px 0 #0c6a92,
+    0 12px 22px -10px rgba(22, 143, 190, 0.55);
+}
+.experience-primary .button.secondary {
+  border: 2px solid #bfe3f2;
+  box-shadow: 0 4px 0 rgba(23, 48, 75, 0.08);
+}
+.experience-primary .button.ghost { box-shadow: 0 4px 0 rgba(23, 48, 75, 0.08); }
+
+.experience-primary .icon-button {
+  border-radius: 50%;
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+.experience-primary .icon-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -8px rgba(23, 32, 94, 0.4);
+}
+
+/* 课程卡「进入课程」与底部快捷入口 */
+.experience-primary .visual-course-card button {
+  border-radius: 999px;
+  font-weight: 800;
+  transition: transform 0.12s ease, filter 0.15s ease;
+}
+.experience-primary .visual-course-card button:hover { transform: translateX(2px); filter: brightness(1.05); }
+.experience-primary .home-shortcuts > button { transition: background 0.15s ease; }
+.experience-primary .home-shortcuts > button:hover { background: #f3f7ff; }
+.experience-primary .home-shortcuts > button > img { transition: transform 0.2s ease; }
+.experience-primary .home-shortcuts > button:hover > img { transform: translateY(-3px) scale(1.06); }
