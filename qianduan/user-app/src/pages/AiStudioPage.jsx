@@ -18,6 +18,7 @@ export function AiStudioPage({
   onDraftConsumed,
   onPracticeRecorded,
   experience = EXPERIENCE.TEEN,
+  schoolStage,
 }) {
   const [activeTopicId, setActiveTopicId] = useState(null);
   const [openCategoryId, setOpenCategoryId] = useState(null);
@@ -132,7 +133,7 @@ export function AiStudioPage({
         style={{ gridTemplateColumns: `${railWidth}px 6px minmax(0, 1fr)` }}
       >
         {primary ? (
-          <PrimaryLearningGuide session={session} navigate={navigate} onAskTopic={askPrimaryTopic} />
+          <PrimaryLearningGuide session={session} navigate={navigate} onAskTopic={askPrimaryTopic} schoolStage={schoolStage} />
         ) : <aside className="ai-topic-rail" aria-label="推荐学习主题">
           <div className="ai-topic-rail-head">
             <Bot size={16} />

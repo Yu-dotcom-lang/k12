@@ -414,6 +414,7 @@ export function App() {
           onDraftConsumed={() => setAssistantDraft(null)}
           onPracticeRecorded={() => setPracticeRevision((value) => value + 1)}
           experience={experience}
+          schoolStage={learningProfile?.schoolStage}
         />
       ),
       courses: <CoursesPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} learningProfile={learningProfile} />,

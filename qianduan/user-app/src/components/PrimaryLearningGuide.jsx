@@ -1,10 +1,21 @@
 import { ArrowRight, BookOpen, LoaderCircle, Sparkles, Target } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { coursesApi, practiceApi } from "../api/client.js";
+import { courseMatchesLearningScope, EXPERIENCE } from "../experience/experience.js";
 
-export function PrimaryLearningGuide({ session, navigate, onAskTopic }) {
+// 小学端只认这些知识点：猫咪侦探课、互动绘本和图形编程真正教过的内容。
+// 其余练习记录（中学的排序、回归等）不进入学习向导，避免给小学生排中学任务。
+const PRIMARY_KNOWLEDGE_CODES = new Set([
+  "machine_learning.image_classification",
+  "machine_learning.features_labels",
+  "computer_vision.object_detection",
+  "computing.algorithm_basics",
+  "computing.loop_basics",
+  "computing.step_by_step_thinking",
+]);
+
+export function PrimaryLearningGuide({ session, navigate, onAskTopic, schoolStage }) {
   const [courses, setCourses] = useState([]);
-  const [insights, setInsights] = useState([]);
   const [mastery, setMastery] = useState([]);
   const [loading, setLoading] = useState(Boolean(session));
 
@@ -12,44 +23,41 @@ export function PrimaryLearningGuide({ session, navigate, onAskTopic }) {
     let active = true;
     if (!session) {
       setCourses([]);
-      setInsights([]);
       setMastery([]);
       setLoading(false);
       return () => { active = false; };
     }
 
     setLoading(true);
-    Promise.allSettled([
-      practiceApi.insights(),
-      practiceApi.mastery(),
-    ]).then(async ([insightResult, masteryResult]) => {
-      if (!active) return;
-      const masteryItems = masteryResult.status === "fulfilled" && Array.isArray(masteryResult.value)
-        ? masteryResult.value
-        : [];
-      setInsights(insightResult.status === "fulfilled" && Array.isArray(insightResult.value)
-        ? insightResult.value
-        : []);
-      setMastery(masteryItems);
-      try {
-        const recommendations = await coursesApi.personalized(
-          masteryItems.map((item) => ({
-            knowledgeCode: item.knowledgeCode,
-            masteryPercent: Number(item.masteryPercent) || 0,
-          })),
-          4,
-        );
-        if (active) setCourses(Array.isArray(recommendations) ? recommendations : []);
-      } catch {
-        const fallback = await coursesApi.recommended(4).catch(() => []);
-        if (active) setCourses((Array.isArray(fallback) ? fallback : []).map((course) => ({ course })));
-      }
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
+    practiceApi.mastery()
+      .then(async (masteryItems) => {
+        if (!active) return;
+        const scopedMastery = (Array.isArray(masteryItems) ? masteryItems : [])
+          .filter((item) => PRIMARY_KNOWLEDGE_CODES.has(item.knowledgeCode));
+        setMastery(scopedMastery);
+        const masteryHints = scopedMastery.map((item) => ({
+          knowledgeCode: item.knowledgeCode,
+          masteryPercent: Number(item.masteryPercent) || 0,
+        }));
+        try {
+          const recommendations = await coursesApi.personalized(masteryHints, 6);
+          const scoped = inPrimaryScope(recommendations, schoolStage);
+          if (!scoped.length) throw new Error("no in-scope recommendation");
+          if (active) setCourses(scoped);
+        } catch {
+          const fallback = await coursesApi.recommended(6).catch(() => []);
+          if (active) setCourses(inPrimaryScope(fallback, schoolStage).map((course) => ({ course })));
+        }
+      })
+      .catch(() => {
+        if (active) setMastery([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
     return () => { active = false; };
-  }, [session]);
+  }, [session, schoolStage]);
 
   const weakPoints = useMemo(
     () => mastery
@@ -58,7 +66,7 @@ export function PrimaryLearningGuide({ session, navigate, onAskTopic }) {
       .slice(0, 3),
     [mastery],
   );
-  const nextTopic = weakPoints[0]?.topic || insights[0]?.topic || null;
+  const nextTopic = weakPoints[0]?.topic || null;
 
   return (
     <aside className="primary-learning-guide" aria-label="我的学习向导">
@@ -76,7 +84,7 @@ export function PrimaryLearningGuide({ session, navigate, onAskTopic }) {
           <section className="primary-next-step">
             <small>下一步学什么</small>
             <strong>{nextTopic || "从互动绘本认识图像分类"}</strong>
-            <p>{insights[0]?.suggestion || "先看故事，再完成一个小挑战。"}</p>
+            <p>{nextTopic ? "和小智一起复习它，再做一道小练习。" : "先听故事，再完成一个小挑战。"}</p>
             <button
               className="button primary compact"
               type="button"
@@ -123,4 +131,11 @@ export function PrimaryLearningGuide({ session, navigate, onAskTopic }) {
       )}
     </aside>
   );
+}
+
+function inPrimaryScope(recommendations, schoolStage) {
+  return (Array.isArray(recommendations) ? recommendations : []).filter((item) => {
+    const course = item?.course || item;
+    return courseMatchesLearningScope(course?.gradeLevel, schoolStage, EXPERIENCE.PRIMARY);
+  });
 }
