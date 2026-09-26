@@ -2200,6 +2200,7 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 .classification-questions fieldset { padding:22px; border:1px solid #d7e5eb; border-radius:6px; background:#fff; }
 .classification-questions legend { padding:0 8px; color:#1d2939; font-weight:800; }
 .classification-visual { display:grid; place-items:center; min-height:150px; margin:8px 0 18px; border-radius:6px; background:linear-gradient(145deg,#edfaff,#fff8e1); font-size:82px; }
+.classification-visual img { max-width:min(320px,80%); max-height:220px; width:auto; height:auto; border-radius:10px; object-fit:contain; box-shadow:0 10px 24px -16px rgba(31,64,104,.45); }
 .classification-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .classification-options label { display:flex; align-items:center; justify-content:center; min-height:54px; padding:10px; cursor:pointer; color:#344054; border:2px solid #dce5e9; border-radius:6px; background:#fff; font-weight:750; }
 .classification-options label.selected { color:#075f7d; border-color:#28a7cc; background:#eaf9ff; }

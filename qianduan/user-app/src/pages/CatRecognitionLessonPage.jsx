@@ -367,7 +367,13 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
             {quiz.questions.map((question, index) => (
               <fieldset key={question.id}>
                 <legend>第 {index + 1} 关 · {question.prompt}</legend>
-                {question.visual && <div className="classification-visual" role="img" aria-label={question.visual.alt}>{question.visual.value}</div>}
+                {question.visual && (
+                  <div className="classification-visual" role="img" aria-label={question.visual.alt}>
+                    {question.visual.kind === "image"
+                      ? <img src={question.visual.value} alt={question.visual.alt || "题目图片"} />
+                      : question.visual.value}
+                  </div>
+                )}
                 <div className="classification-options">
                   {question.options.map((option) => (
                     <label className={answers[question.id] === option.id ? "selected" : ""} key={option.id}>

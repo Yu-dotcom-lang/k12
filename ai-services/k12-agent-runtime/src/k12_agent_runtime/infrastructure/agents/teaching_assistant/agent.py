@@ -11,11 +11,17 @@ from k12_agent_runtime.domain.agents.models import (
     AgentRunStatus,
 )
 from k12_agent_runtime.domain.llm import ChatModel
+from k12_agent_runtime.domain.llm.models import ChatMessage, ChatRequest
 from k12_agent_runtime.infrastructure.agents.teaching_assistant.graph import (
     build_teaching_assistant_graph,
 )
 from k12_agent_runtime.infrastructure.agents.teaching_assistant.state import (
     TeachingAssistantState,
+)
+from k12_agent_runtime.infrastructure.agents.teaching_assistant.topics import (
+    Topic,
+    lesson_for,
+    resolve_topic,
 )
 
 
@@ -30,6 +36,7 @@ class TeachingAssistantAgent:
         rag_top_k: int = 5,
     ) -> None:
         # 图结构固定，只在容器启动时编译一次。
+        self._chat_model = chat_model
         self._graph = build_teaching_assistant_graph(
             chat_model,
             search_knowledge,
@@ -102,8 +109,211 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
         context["audiencePolicy"] = "lower-primary"
         context["preferredInteraction"] = ["互动绘本", "图片选择", "短句讲解"]
         scoped_input = replace(run_input, agent_code=self.code, context=context)
+        special = await self._match_special_turn(scoped_input, context)
+        if special is not None:
+            return special
         result = await super().invoke(scoped_input)
+        if result.metadata.get("topicSupported") is False:
+            # 低龄自由提问不该被审定主题守卫拒之门外：儿童安全口吻直接回答，
+            # 或对小挑战请求给出确定性邀请，避免重复同一张引导卡。
+            text = scoped_input.input_text or ""
+            if "挑战" in text:
+                return self._guided_side_turn(
+                    scoped_input, context, self._CHALLENGE_INVITE, False,
+                    prompt="想好答案就告诉小智，或再听一个小故事！",
+                )
+            answer, used_model = await self._answer_like_kid_friend(text)
+            return self._guided_side_turn(
+                scoped_input, context, answer, used_model,
+                prompt="还想问什么？或者开始今天的小挑战！",
+            )
         return self._build_guided_result(result, context)
+
+    _INVITE_TEXTS = frozenset({
+        "我还有一个问题想问。",
+        "我还有一个问题想问",
+        "我还有问题",
+        "我有问题",
+        "我问个问题",
+    })
+    _CHALLENGE_INVITE = (
+        "小挑战来啦：找一找你身边最『聪明』的东西——它能帮我们做什么？"
+        "把你的发现说给小智听吧！"
+    )
+    _STORY_SYSTEM = (
+        "你是小学低年级的AI启蒙老师小智。请根据给定的课程内容讲一个儿童小故事："
+        "主角是一个小朋友和一个可爱的机器人；不超过120字；全部使用口语化短句；"
+        "故事要贴合课程内容；结尾用一个简短的问题引导孩子思考。"
+    )
+    _KID_ANSWER_SYSTEM = (
+        "你是面向6-9岁小朋友的AI助手小智。请用不超过3句话、口语化短句回答孩子的问题；"
+        "语气亲切正面，先直接给出答案；遇到危险、恐怖或成人内容时，"
+        "温柔建议孩子去问家长或老师；不要讨论暴力等不适内容；不要编造课堂里没有的AI概念。"
+    )
+
+    async def _match_special_turn(
+        self,
+        run_input: AgentRunInput,
+        context: dict[str, object],
+    ) -> AgentRunResult | None:
+        """引导卡按钮的固定话术在通用教学图里解析不出主题，需在此旁路处理。"""
+        text = (run_input.input_text or "").strip()
+        if not text:
+            return None
+        if "故事" in text and len(text) <= 30:
+            return await self._story_turn(run_input, context)
+        if text in self._INVITE_TEXTS:
+            return self._guided_side_turn(
+                run_input, context,
+                "好呀！把你的问题打给小智，我会用最简单的话回答你。",
+                False,
+                prompt="你想问什么呀？直接打给小智吧！",
+            )
+        return None
+
+    async def _story_turn(
+        self,
+        run_input: AgentRunInput,
+        context: dict[str, object],
+    ) -> AgentRunResult:
+        context_topic = (
+            context.get("topicCode")
+            or context.get("knowledgeCode")
+            or context.get("topic")
+        )
+        topic = resolve_topic(run_input.input_text, context_topic)
+        lesson = None
+        if isinstance(topic, Topic):
+            topic_title = topic.title
+            topic_code: str | None = topic.code
+            lesson = lesson_for(topic, "lower_primary")
+        elif isinstance(topic, str):
+            topic_title = str(context_topic or topic)
+            topic_code = topic
+        else:
+            topic_title = ""
+            topic_code = None
+        story, used_model = await self._compose_story(run_input.input_text, topic_title, lesson)
+        return self._guided_side_turn(
+            run_input, context, story, used_model,
+            prompt="想再听一个故事，还是开始今天的小挑战？",
+            topic_title=topic_title,
+            topic_code=topic_code,
+        )
+
+    async def _compose_story(
+        self,
+        request_text: str,
+        topic_title: str,
+        lesson: dict[str, str] | None,
+    ) -> tuple[str, bool]:
+        fallback = self._fallback_story(topic_title, lesson)
+        if self._chat_model is None:
+            return fallback, False
+        context_bits = []
+        if topic_title:
+            context_bits.append(f"主题：{topic_title}")
+        if lesson:
+            context_bits.append(
+                f"内容要点：{lesson.get('explanation', '')} 例子：{lesson.get('example', '')}"
+            )
+        context_bits.append(f"孩子说：{request_text}")
+        try:
+            response = await self._chat_model.complete(ChatRequest(
+                messages=(
+                    ChatMessage(role="system", content=self._STORY_SYSTEM),
+                    ChatMessage(role="user", content="\n".join(context_bits)),
+                ),
+                temperature=0.6,
+                max_output_tokens=400,
+            ))
+            story = (response.content or "").strip()
+        except Exception:
+            return fallback, False
+        return (story or fallback), bool(story)
+
+    @staticmethod
+    def _fallback_story(topic_title: str, lesson: dict[str, str] | None) -> str:
+        title = topic_title or "今天的AI小发现"
+        example = (lesson or {}).get("example") or "机器人豆豆认真观察身边的图案，一步一步学了起来"
+        return (
+            f"小明和机器人豆豆一起研究「{title}」。{example}。"
+            "豆豆眨眨眼问：你发现其中的小秘密了吗？"
+        )
+
+    async def _answer_like_kid_friend(self, question_text: str) -> tuple[str, bool]:
+        fallback = (
+            "这个问题真有意思！小智更擅长陪你发现身边的小秘密，"
+            "也可以把这个问题讲给爸爸妈妈或老师听一听。"
+        )
+        if self._chat_model is None:
+            return fallback, False
+        try:
+            response = await self._chat_model.complete(ChatRequest(
+                messages=(
+                    ChatMessage(role="system", content=self._KID_ANSWER_SYSTEM),
+                    ChatMessage(role="user", content=question_text or "你好"),
+                ),
+                temperature=0.4,
+                max_output_tokens=300,
+            ))
+            answer = (response.content or "").strip()
+        except Exception:
+            return fallback, False
+        return (answer or fallback), bool(answer)
+
+    def _guided_side_turn(
+        self,
+        run_input: AgentRunInput,
+        context: dict[str, object],
+        body_text: str,
+        used_model: bool,
+        prompt: str,
+        topic_title: str = "",
+        topic_code: str | None = None,
+    ) -> AgentRunResult:
+        """故事/自由问答轮次：沿用 TRY 阶段引导卡协议，保证前端可继续交互。"""
+        choices = [
+            {"id": "story", "label": "再听一个故事", "value": "我想再听一个小故事。"},
+            {"id": "challenge", "label": "开始小挑战", "value": "我准备好开始小挑战了。"},
+            {"id": "question", "label": "我还有问题", "value": "我还有一个问题想问。"},
+        ]
+        guided_conversation = {
+            "schemaVersion": "1.0",
+            "mode": "SHORT_TURN",
+            "phase": "TRY",
+            "turnIndex": self._conversation_turn_count(context),
+            "prompt": prompt,
+            "choices": choices,
+            "showPractice": False,
+            "progressCurrent": 3,
+            "progressTotal": 3,
+            "encouragement": "答错也没关系，小智会陪你一起找答案。",
+        }
+        metadata = {
+            "implementation": "deterministic-langgraph",
+            "workflow": "lower-primary-guided-v1",
+            "domain": "ai-literacy",
+            "stage": "小学低年级",
+            "stageCode": "lower_primary",
+            "topicSupported": True,
+            "topic": topic_title or None,
+            "topicCode": topic_code,
+            "generatedInteractions": [],
+            "modelUsed": used_model,
+            "ragRetrieved": False,
+            "modelFallbackReason": "not_applicable",
+            "guidedConversation": guided_conversation,
+        }
+        output_text = f"### {topic_title or '小智陪你聊'}\n\n{body_text}\n\n**{prompt}**"
+        return AgentRunResult(
+            run_id=run_input.run_id,
+            agent_code=self.code,
+            status=AgentRunStatus.SUCCEEDED,
+            output_text=output_text,
+            artifacts=(),
+            metadata=metadata,
+        )
 
     def _build_guided_result(
         self,
