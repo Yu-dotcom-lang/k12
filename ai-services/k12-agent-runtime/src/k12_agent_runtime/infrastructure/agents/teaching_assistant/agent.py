@@ -121,11 +121,14 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
                 return self._guided_side_turn(
                     scoped_input, context, self._CHALLENGE_INVITE, False,
                     prompt="想好答案就告诉小智，或再听一个小故事！",
+                    encouragement="大胆说出你的发现，小智很想听！",
+                    phase="TRY",
                 )
             answer, used_model = await self._answer_like_kid_friend(text)
             return self._guided_side_turn(
                 scoped_input, context, answer, used_model,
                 prompt="还想问什么？或者开始今天的小挑战！",
+                encouragement="回答得真棒！有新问题随时问小智！",
             )
         return self._build_guided_result(result, context)
 
@@ -168,6 +171,7 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
                 "好呀！把你的问题打给小智，我会用最简单的话回答你。",
                 False,
                 prompt="你想问什么呀？直接打给小智吧！",
+                encouragement="想问什么都可以，小智认真听！",
             )
         return None
 
@@ -199,6 +203,7 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
             prompt="想再听一个故事，还是开始今天的小挑战？",
             topic_title=topic_title,
             topic_code=topic_code,
+            encouragement="喜欢这个故事的话，就再听一个吧！",
         )
 
     async def _compose_story(
@@ -271,8 +276,15 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
         prompt: str,
         topic_title: str = "",
         topic_code: str | None = None,
+        encouragement: str = "有新想法随时告诉小智！",
+        phase: str = "CHAT",
     ) -> AgentRunResult:
-        """故事/自由问答轮次：沿用 TRY 阶段引导卡协议，保证前端可继续交互。"""
+        """故事/自由问答轮次：沿用引导卡协议，保证前端可继续交互。
+
+        这些轮次没有真正待作答的题目，鼓励语必须贴合语境
+        （提问邀请、听故事、自由问答），不能再复用 TRY 挑战卡的
+        "答错也没关系"；phase 用 CHAT 让前端标题回落为"一起学"。
+        """
         choices = [
             {"id": "story", "label": "再听一个故事", "value": "我想再听一个小故事。"},
             {"id": "challenge", "label": "开始小挑战", "value": "我准备好开始小挑战了。"},
@@ -281,14 +293,14 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
         guided_conversation = {
             "schemaVersion": "1.0",
             "mode": "SHORT_TURN",
-            "phase": "TRY",
+            "phase": phase,
             "turnIndex": self._conversation_turn_count(context),
             "prompt": prompt,
             "choices": choices,
             "showPractice": False,
             "progressCurrent": 3,
             "progressTotal": 3,
-            "encouragement": "答错也没关系，小智会陪你一起找答案。",
+            "encouragement": encouragement,
         }
         metadata = {
             "implementation": "deterministic-langgraph",
