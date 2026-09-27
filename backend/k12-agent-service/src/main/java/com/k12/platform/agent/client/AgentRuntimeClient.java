@@ -5,6 +5,7 @@ import com.k12.platform.agent.client.dto.RuntimeAgentRunResponse;
 import com.k12.platform.agent.client.dto.RuntimeCodeExecutionRequest;
 import com.k12.platform.agent.client.dto.RuntimeCodeExecutionResponse;
 import com.k12.platform.agent.client.dto.RuntimeDownloadUrlResponse;
+import com.k12.platform.agent.client.dto.RuntimeSpeechRecognitionResponse;
 import com.k12.platform.agent.client.dto.RuntimeSpeechRequest;
 import com.k12.platform.agent.config.AgentRuntimeFeignConfiguration;
 import com.k12.platform.common.api.ApiResponse;
@@ -51,4 +52,8 @@ public interface AgentRuntimeClient {
     /** 由 Java 鉴权后代理云语音，浏览器不会接触 Runtime 内部密钥。 */
     @PostMapping("/internal/v1/speech/synthesize")
     ResponseEntity<byte[]> synthesizeSpeech(@RequestBody RuntimeSpeechRequest request);
+
+    /** 由 Java 鉴权后代理语音识别，音频以原始字节转发给 Runtime。 */
+    @PostMapping("/internal/v1/speech/recognize")
+    ApiResponse<RuntimeSpeechRecognitionResponse> recognizeSpeech(@RequestBody byte[] audio);
 }

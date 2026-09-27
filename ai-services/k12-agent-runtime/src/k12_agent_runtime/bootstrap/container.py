@@ -11,7 +11,7 @@ from k12_agent_runtime.application.rag import (
 from k12_agent_runtime.application.rag.chunk_text import TextChunker
 from k12_agent_runtime.application.rag.index_teaching_resource import IndexTeachingResourceUseCase
 from k12_agent_runtime.application.sandbox.execute_code import ExecuteCodeUseCase
-from k12_agent_runtime.application.speech import SynthesizeSpeechUseCase
+from k12_agent_runtime.application.speech import RecognizeSpeechUseCase, SynthesizeSpeechUseCase
 from k12_agent_runtime.application.storage import (
     CreateDownloadUrlUseCase,
     StoreObjectUseCase,
@@ -45,7 +45,10 @@ from k12_agent_runtime.infrastructure.sandbox import (
     PistonCodeSandbox,
     TencentAgentSandboxAdapter,
 )
-from k12_agent_runtime.infrastructure.speech import DashScopeSpeechSynthesizer
+from k12_agent_runtime.infrastructure.speech import (
+    DashScopeSpeechRecognizer,
+    DashScopeSpeechSynthesizer,
+)
 from k12_agent_runtime.infrastructure.storage import MinioObjectStorage
 
 
@@ -67,6 +70,7 @@ class ApplicationContainer:
     store_object: StoreObjectUseCase
     create_download_url: CreateDownloadUrlUseCase
     synthesize_speech: SynthesizeSpeechUseCase
+    recognize_speech: RecognizeSpeechUseCase
 
     async def close(self) -> None:
         resources = [
@@ -89,6 +93,7 @@ def build_container(settings: Settings) -> ApplicationContainer:
     trace_repository = _build_trace_repository(settings)
     object_storage = _build_object_storage(settings)
     speech_synthesizer = _build_speech_synthesizer(settings)
+    speech_recognizer = _build_speech_recognizer(settings)
     store_object = StoreObjectUseCase(object_storage, settings.minio_max_upload_bytes)
     chunker = TextChunker(settings.rag_chunk_size, settings.rag_chunk_overlap)
     index_document = IndexDocumentUseCase(embedder, repository, chunker, rag_cache)
@@ -153,6 +158,10 @@ def build_container(settings: Settings) -> ApplicationContainer:
             speech_synthesizer,
             settings.tts_max_text_chars,
         ),
+        recognize_speech=RecognizeSpeechUseCase(
+            speech_recognizer,
+            settings.asr_max_audio_bytes,
+        ),
     )
 
 
@@ -174,6 +183,26 @@ def _build_speech_synthesizer(settings: Settings) -> DashScopeSpeechSynthesizer 
         voice=settings.tts_voice,
         timeout_seconds=settings.tts_timeout_seconds,
         max_audio_bytes=settings.tts_max_audio_bytes,
+    )
+
+
+def _build_speech_recognizer(settings: Settings) -> DashScopeSpeechRecognizer | None:
+    if not settings.asr_enabled:
+        return None
+    provider = settings.asr_provider.strip().lower()
+    if provider not in {"dashscope", "aliyun", "bailian"}:
+        raise ValueError(f"暂不支持的语音识别提供方：{provider}")
+    configured_key = settings.asr_api_key.get_secret_value() if settings.asr_api_key else ""
+    tts_key = settings.tts_api_key.get_secret_value() if settings.tts_api_key else ""
+    llm_key = settings.llm_api_key.get_secret_value() if settings.llm_api_key else ""
+    api_key = configured_key.strip() or tts_key.strip() or llm_key.strip()
+    if not api_key:
+        raise ValueError("语音识别已启用，但ASR/TTS/LLM API Key均未配置")
+    return DashScopeSpeechRecognizer(
+        base_url=settings.asr_base_url,
+        api_key=api_key,
+        model=settings.asr_model,
+        timeout_seconds=settings.asr_timeout_seconds,
     )
 
 

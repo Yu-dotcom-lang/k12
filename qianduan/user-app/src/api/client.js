@@ -214,6 +214,10 @@ export const speechApi = {
     method: "POST",
     body: JSON.stringify({ text }),
   }),
+  recognize: (audioBase64, contentType = "audio/wav") => api("/api/v1/agents/speech/recognize", {
+    method: "POST",
+    body: JSON.stringify({ audioBase64, contentType }),
+  }),
 };
 
 export { AUTH_STORAGE_KEY };

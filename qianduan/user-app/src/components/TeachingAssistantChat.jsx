@@ -5,10 +5,13 @@ import {
   ExternalLink,
   LoaderCircle,
   MessageSquarePlus,
+  Mic,
   Send,
+  Square,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { agentsApi, practiceApi, profileApi, teachingResourcesApi } from "../api/client.js";
+import { agentsApi, practiceApi, profileApi, speechApi, teachingResourcesApi } from "../api/client.js";
+import { blobToBase64, createVoiceRecorder } from "../utils/voiceInput.js";
 import { BubbleSortAnimation } from "./BubbleSortAnimation.jsx";
 import { MarkdownContent } from "./MarkdownContent.jsx";
 import { TeachingSteps } from "./TeachingSteps.jsx";
@@ -452,8 +455,12 @@ export function TeachingAssistantChat({
   const [sessionId, setSessionId] = useState(() => getOrCreateSessionId(session, agentCode));
   const [conversation, setConversation] = useState([greeting]);
   const [lastTopicCode, setLastTopicCode] = useState(null);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
   const conversationRef = useRef(null);
   const proactiveSessionRef = useRef("");
+  const voiceRecorderRef = useRef(null);
   const stageCode = stageCodes[profile?.schoolStage];
   const isPage = variant === "page";
   const isLowerPrimary = agentCode === "lower-primary-tutor";
@@ -468,6 +475,62 @@ export function TeachingAssistantChat({
     if (session) return;
     setQuestion("");
   }, [session]);
+
+  // 低年级语音输入：再点一次结束录音；组件卸载或切换会话时放弃录音。
+  useEffect(() => () => {
+    voiceRecorderRef.current?.abort();
+    voiceRecorderRef.current = null;
+  }, []);
+
+  async function startVoiceInput() {
+    if (recording || transcribing || sending || restoring) return;
+    setVoiceError("");
+    const recorder = createVoiceRecorder({
+      onAutoStop: () => {
+        setRecording(false);
+        voiceRecorderRef.current = null;
+        transcribeRecording(recorder);
+      },
+    });
+    try {
+      await recorder.start();
+      voiceRecorderRef.current = recorder;
+      setRecording(true);
+    } catch (caught) {
+      const denied = caught?.name === "NotAllowedError" || caught?.name === "SecurityError";
+      setVoiceError(denied ? "请允许使用麦克风，小智才能听你说话" : "这个设备暂时不能录音，请用打字告诉小智");
+    }
+  }
+
+  function stopVoiceInput() {
+    const recorder = voiceRecorderRef.current;
+    if (!recorder) return;
+    voiceRecorderRef.current = null;
+    setRecording(false);
+    transcribeRecording(recorder);
+  }
+
+  async function transcribeRecording(recorder) {
+    setTranscribing(true);
+    try {
+      const { blob } = await recorder.stop();
+      if (!blob || blob.size < 1000) {
+        setVoiceError("好像没录到声音，请靠近一点再说一遍");
+        return;
+      }
+      const result = await speechApi.recognize(await blobToBase64(blob), "audio/wav");
+      const text = String(result?.text || "").trim();
+      if (!text) {
+        setVoiceError("小智没听清，请再说一遍");
+        return;
+      }
+      setQuestion((prev) => (prev ? `${prev} ${text}` : text));
+    } catch (caught) {
+      setVoiceError(caught?.message || "语音识别失败了，请稍后再试");
+    } finally {
+      setTranscribing(false);
+    }
+  }
 
   useEffect(() => {
     setHistoryReady(false);
@@ -761,18 +824,39 @@ export function TeachingAssistantChat({
       </div>
 
       {error && <p className="assistant-error">{error}</p>}
-      <form className="assistant-input" onSubmit={submit}>
+      <form className={`assistant-input${isLowerPrimary ? " with-voice" : ""}`} onSubmit={submit}>
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder={restoring ? "正在恢复历史对话" : isLowerPrimary ? "告诉小智你的想法" : "输入问题，按 Enter 发送"}
+          placeholder={
+            restoring ? "正在恢复历史对话"
+              : transcribing ? "小智正在听你说话……"
+                : isLowerPrimary ? "告诉小智你的想法" : "输入问题，按 Enter 发送"
+          }
           aria-label={isLowerPrimary ? "告诉小智你的想法" : "向 AI 助教提问"}
           disabled={restoring}
         />
+        {isLowerPrimary && (
+          <button
+            className={`send-button voice-button${recording ? " recording" : ""}`}
+            type="button"
+            title={recording ? "说完点这里" : "点一下说话"}
+            aria-pressed={recording}
+            disabled={transcribing || sending || restoring}
+            onClick={recording ? stopVoiceInput : startVoiceInput}
+          >
+            {recording ? <Square size={14} /> : <Mic size={17} />}
+          </button>
+        )}
         <button className="send-button" type="submit" title="发送问题" disabled={sending || restoring}>
           <Send size={17} />
         </button>
       </form>
+      {isLowerPrimary && (voiceError || recording) && (
+        <p className={voiceError ? "voice-hint voice-hint-error" : "voice-hint"}>
+          {voiceError || (recording ? "小智在听你说啦，讲完点一下方块" : "")}
+        </p>
+      )}
       <footer>{isLowerPrimary ? "一次学一点，答错也没关系" : "AI 回答仅供学习参考"}</footer>
     </section>
   );
