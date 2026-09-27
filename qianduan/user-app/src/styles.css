@@ -5273,3 +5273,10 @@ body:has(main.experience-teen)::after {
 .courseware-card-meta { margin: 0; color: var(--muted); font-size: 12px; }
 .courseware-card .button { margin-top: auto; }
 .back-button { margin-bottom: 10px; }
+
+/* 课件朗读按钮三态 */
+.courseware-speak-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.courseware-speak-wrap .courseware-speak { margin-top: 0; }
+.courseware-speak-wrap .courseware-speak .spin { animation: spin 0.9s linear infinite; }
+.courseware-speak:disabled { opacity: .65; cursor: wait; }
+.courseware-speak-error { color: var(--danger, #c0392b); font-size: 11px; }

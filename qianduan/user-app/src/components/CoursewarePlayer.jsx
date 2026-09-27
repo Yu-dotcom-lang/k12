@@ -1,6 +1,7 @@
 import {
   ChevronLeft,
   ChevronRight,
+  LoaderCircle,
   Square,
   Volume2,
 } from "lucide-react";
@@ -25,6 +26,9 @@ export function CoursewarePlayer({ artifact }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [speaking, setSpeaking] = useState(false);
+  const [speakLoading, setSpeakLoading] = useState(false);
+  const [speakError, setSpeakError] = useState(false);
+  const audioCacheRef = useRef(new Map());
   const audioRef = useRef(null);
 
   function stopSpeaking() {
@@ -36,18 +40,35 @@ export function CoursewarePlayer({ artifact }) {
   useEffect(() => () => stopSpeaking(), []);
   useEffect(() => {
     stopSpeaking();
+    setSpeakError(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
   async function speak(text) {
-    if (!text) return;
+    if (!text || speakLoading) return;
+    setSpeakError(false);
     if (speaking) {
       stopSpeaking();
       return;
     }
+    const key = String(text).slice(0, 800);
+    // 语音合成要几秒钟：缓存音频，同一页第二次点击立刻播放
+    let blob = audioCacheRef.current.get(key);
+    if (!blob) {
+      setSpeakLoading(true);
+      try {
+        const result = await speechApi.synthesize(key);
+        blob = result.blob;
+        audioCacheRef.current.set(key, blob);
+      } catch {
+        setSpeakError(true);
+        return;
+      } finally {
+        setSpeakLoading(false);
+      }
+    }
     try {
-      const result = await speechApi.synthesize(String(text).slice(0, 800));
-      const audio = new Audio(URL.createObjectURL(result.blob));
+      const audio = new Audio(URL.createObjectURL(blob));
       audioRef.current = audio;
       setSpeaking(true);
       audio.onended = () => {
@@ -57,6 +78,7 @@ export function CoursewarePlayer({ artifact }) {
       await audio.play();
     } catch {
       setSpeaking(false);
+      setSpeakError(true);
     }
   }
 
@@ -136,15 +158,20 @@ export function CoursewarePlayer({ artifact }) {
           </div>
         )}
         {slide.type !== "quiz" && narrationText && (
-          <button
-            className={`courseware-speak${speaking ? " speaking" : ""}`}
-            type="button"
-            onClick={() => speak(narrationText)}
-            title={speaking ? "停止朗读" : "读给我听"}
-          >
-            {speaking ? <Square size={13} /> : <Volume2 size={14} />}
-            {speaking ? "停止朗读" : "读给我听"}
-          </button>
+          <div className="courseware-speak-wrap">
+            <button
+              className={`courseware-speak${speaking ? " speaking" : ""}`}
+              type="button"
+              disabled={speakLoading}
+              onClick={() => speak(narrationText)}
+              title={speaking ? "停止朗读" : "读给我听"}
+            >
+              {speakLoading ? <LoaderCircle className="spin" size={13} />
+                : speaking ? <Square size={13} /> : <Volume2 size={14} />}
+              {speakLoading ? "小智准备中…" : speaking ? "停止朗读" : "读给我听"}
+            </button>
+            {speakError && <span className="courseware-speak-error">朗读暂时不可用，稍后再试</span>}
+          </div>
         )}
       </div>
       <footer className="courseware-nav">
