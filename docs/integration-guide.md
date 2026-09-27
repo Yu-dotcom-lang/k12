@@ -6,6 +6,7 @@
 ## 1. 系统概览
 
 平台采用「统一网关 + 微服务 + Python 智能体运行时」架构，前端为学生端（小学/中学双体验）与管理端两个 SPA 应用。
+智能体侧支持文本对话、语音合成/识别、图像识别、代码沙箱执行等多模态交互，均可经网关 API 直接集成。
 
 ```mermaid
 flowchart LR
@@ -135,7 +136,8 @@ curl https://k12-demo.sites.knodo.vip/api/v1/assessments/practice-attempts/me/ma
 | POST | `/api/v1/agents/{agentCode}/runs` | 发起对话/讲解/练习生成，支持 SYNC/ASYNC 与上下文（学段、教材、topicCode、会话历史） |
 | GET | `/api/v1/agents/runs/{runId}/artifacts` | 获取产出工件：小测（quiz）、分步动画（animation/lesson-steps）等 |
 | POST | `/api/v1/agents/code-executions` | Python 代码沙箱执行（配套在线编程环境） |
-| POST | `/api/v1/agents/speech/synthesize` | 云语音合成（低年级朗读） |
+| POST | `/api/v1/agents/speech/synthesize` | 云语音合成（低年级朗读，返回 MP3 音频流） |
+| POST | `/api/v1/agents/speech/recognize` | 语音识别（Base64 WAV/MP3 ≤5MB → 文字，低年级语音输入） |
 
 **练习与测评（assessments）**
 
@@ -212,6 +214,7 @@ const run = await fetch("/api/v1/agents/lower-primary-tutor/runs", {
 |---|---|
 | 第三方课表跳转学习 | 携带 topicCode 深链到 `#ai-studio`，智能体按学段直接开讲 |
 | 课内嵌智能体问答 | iframe 嵌入 `#ai-studio`，登录态按 4.2 注入 |
+| 低年级语音问答 | iframe 加 `allow="microphone; autoplay"`，前端即可用「点一下说话」语音输入；也可自行调 recognize 接口上传音频换取文字 |
 | 成绩回流宿主 LMS | 轮询 `practice-attempts/me` 与 `homeworks/learning-results/me` 同步判分结果 |
 
 ## 5. 安全与运维要点
