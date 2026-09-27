@@ -2,6 +2,7 @@ import re
 from dataclasses import replace
 from uuid import uuid4
 
+from k12_agent_runtime.application.courseware import GenerateCoursewareUseCase
 from k12_agent_runtime.application.rag import SearchKnowledgeUseCase
 from k12_agent_runtime.domain.agents.models import (
     AgentArtifact,
@@ -34,9 +35,11 @@ class TeachingAssistantAgent:
         search_knowledge: SearchKnowledgeUseCase | None = None,
         rag_candidate_count: int = 20,
         rag_top_k: int = 5,
+        generate_courseware: GenerateCoursewareUseCase | None = None,
     ) -> None:
         # 图结构固定，只在容器启动时编译一次。
         self._chat_model = chat_model
+        self._generate_courseware = generate_courseware
         self._graph = build_teaching_assistant_graph(
             chat_model,
             search_knowledge,
@@ -53,6 +56,10 @@ class TeachingAssistantAgent:
         return "按学段讲解 AI 通识主题，并展示结构化步骤或固定答案的练习。"
 
     async def invoke(self, run_input: AgentRunInput) -> AgentRunResult:
+        if "课件" in (run_input.input_text or ""):
+            courseware = await self._courseware_turn(run_input)
+            if courseware is not None:
+                return courseware
         initial_state: TeachingAssistantState = {"run_input": run_input}
         final_state = await self._graph.ainvoke(initial_state)
 
@@ -89,6 +96,42 @@ class TeachingAssistantAgent:
             output_text=final_state["output_text"],
             artifacts=tuple(artifacts),
             metadata=final_state["metadata"],
+        )
+
+    async def _courseware_turn(self, run_input: AgentRunInput) -> AgentRunResult | None:
+        """「做一个课件」旁路：生成失败时返回 None 走原对话兜底。"""
+        if self._generate_courseware is None:
+            return None
+        context = dict(run_input.context)
+        stage = str(context.get("stage") or "lower_primary")
+        try:
+            document = await self._generate_courseware.execute(
+                run_input.input_text or "",
+                stage=stage,
+                topic_code=context.get("topicCode"),
+            )
+        except (ValueError, RuntimeError):
+            return None
+        text = (
+            "课件做好啦！点下面的卡片，跟小智一页一页学吧。"
+            if self.code == "lower-primary-tutor"
+            else f"《{document['title']}》已生成，点开下方课件卡片即可讲授。"
+        )
+        return AgentRunResult(
+            run_id=run_input.run_id,
+            agent_code=self.code,
+            status=AgentRunStatus.SUCCEEDED,
+            output_text=text,
+            artifacts=(
+                AgentArtifact(
+                    artifact_id=str(uuid4()),
+                    kind=AgentArtifactKind.COURSEWARE,
+                    mime_type="application/vnd.k12.courseware.v1+json",
+                    title=document["title"],
+                    payload=document,
+                ),
+            ),
+            metadata={},
         )
 
 
@@ -163,6 +206,10 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
         text = (run_input.input_text or "").strip()
         if not text:
             return None
+        if "课件" in text:
+            courseware = await self._courseware_turn(run_input)
+            if courseware is not None:
+                return courseware
         if "故事" in text and len(text) <= 30:
             return await self._story_turn(run_input, context)
         if text in self._INVITE_TEXTS:
