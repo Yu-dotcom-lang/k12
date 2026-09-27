@@ -1,9 +1,11 @@
 package com.k12.platform.agent.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.k12.platform.agent.client.dto.RuntimeAgentInvokeRequest;
 import com.k12.platform.agent.client.dto.RuntimeAgentRunResponse;
 import com.k12.platform.agent.client.dto.RuntimeCodeExecutionRequest;
 import com.k12.platform.agent.client.dto.RuntimeCodeExecutionResponse;
+import com.k12.platform.agent.client.dto.RuntimeCoursewareRequest;
 import com.k12.platform.agent.client.dto.RuntimeDownloadUrlResponse;
 import com.k12.platform.agent.client.dto.RuntimeSpeechRecognitionResponse;
 import com.k12.platform.agent.client.dto.RuntimeSpeechRequest;
@@ -56,4 +58,8 @@ public interface AgentRuntimeClient {
     /** 由 Java 鉴权后代理语音识别，音频以原始字节转发给 Runtime。 */
     @PostMapping("/internal/v1/speech/recognize")
     ApiResponse<RuntimeSpeechRecognitionResponse> recognizeSpeech(@RequestBody byte[] audio);
+
+    /** 管理端课件生成：由 Runtime 调用大模型产出课件 JSON 文档。 */
+    @PostMapping("/internal/v1/courseware/generate")
+    ApiResponse<JsonNode> generateCourseware(@RequestBody RuntimeCoursewareRequest request);
 }

@@ -212,6 +212,8 @@ public class K12ServletSecurityAutoConfiguration {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/learning/courses/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.COURSE_UPDATE)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/learning/courses/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.COURSE_DELETE)
                         .requestMatchers(HttpMethod.GET, "/api/v1/agents/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.AGENT_READ)
+                        /* 课件生成与发布仅管理员可操作，必须先于下面的 AGENT_INVOKE 通配规则。 */
+                        .requestMatchers(HttpMethod.POST, "/api/v1/agents/courseware/**").hasAuthority(K12Authorities.ROLE_ADMIN)
                         /* 运行、取消和重试都属于“调用智能体”，必须先于下面的 Agent 配置管理通配规则。 */
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/agents/*/runs",
