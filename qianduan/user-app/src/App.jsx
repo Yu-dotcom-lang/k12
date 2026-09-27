@@ -9,6 +9,7 @@ import { CodeLabPage } from "./pages/CodeLabPage.jsx";
 import { CatRecognitionLessonPage } from "./pages/CatRecognitionLessonPage.jsx";
 import { CourseDetailPage } from "./pages/CourseDetailPage.jsx";
 import { CoursesPage } from "./pages/CoursesPage.jsx";
+import { CoursewaresPage } from "./pages/CoursewaresPage.jsx";
 import { HomePage } from "./pages/HomePage.jsx";
 import { LeaderboardPage } from "./pages/LeaderboardPage.jsx";
 import { ProgressPage } from "./pages/ProgressPage.jsx";
@@ -34,7 +35,7 @@ import {
   validateRegisterForm,
 } from "./utils/passwordValidation.js";
 
-const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson"]);
+const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "coursewares"]);
 const VisualCodeLabPage = lazy(() => import("./pages/VisualCodeLabPage.jsx")
   .then((module) => ({ default: module.VisualCodeLabPage })));
 
@@ -389,6 +390,7 @@ export function App() {
         schoolStage={learningProfile?.schoolStage}
       />,
       "picture-books": <PictureBooksPage session={session} requireLogin={requireLogin} navigate={navigate} />,
+      coursewares: <CoursewaresPage session={session} requireLogin={requireLogin} navigate={navigate} />,
       "cat-lesson": (
         <CatRecognitionLessonPage
           session={session}

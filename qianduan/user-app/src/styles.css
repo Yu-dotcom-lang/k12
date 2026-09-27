@@ -1040,6 +1040,36 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 @keyframes voice-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(224,90,71,.45); } 50% { box-shadow:0 0 0 6px rgba(224,90,71,0); } }
 .voice-hint { margin:0 14px 8px; color:#69808b; font-size:10px; font-weight:700; }
 .voice-hint-error { color:var(--danger); }
+
+/* AI 课件播放器（对话内生成 + 独立页共用） */
+.courseware-player { margin:10px 0 4px; border:2px solid #9fd7e4; border-radius:14px; background:#f2fcff; overflow:hidden; }
+.courseware-head { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#dff4f9; }
+.courseware-badge { padding:2px 8px; border-radius:999px; color:#fff; background:#1398b1; font-size:9px; font-weight:800; }
+.courseware-head strong { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:#175e70; }
+.courseware-page { color:#4d7c8a; font-size:10px; font-weight:800; }
+.courseware-slide { min-height:190px; padding:14px 16px; background:#fff; }
+.courseware-slide h4 { margin:0 0 10px; font-size:14px; color:#12414d; }
+.courseware-cover { display:grid; place-content:center; min-height:190px; text-align:center; background:linear-gradient(160deg,#e6f9ff,#fff7e6); }
+.courseware-cover h3 { margin:0 0 6px; font-size:20px; color:#0f4c5c; }
+.courseware-cover p { margin:0 0 14px; color:#4d7c8a; font-size:12px; }
+.courseware-start { padding:8px 26px; color:#fff; border:0; border-radius:999px; background:#1398b1; font-size:13px; font-weight:800; }
+.courseware-bullets { margin:0; padding-left:18px; display:grid; gap:8px; color:#244c57; font-size:13px; line-height:1.6; }
+.courseware-md { font-size:13px; line-height:1.7; color:#244c57; }
+.courseware-options { display:grid; gap:8px; }
+.courseware-option { display:flex; align-items:center; gap:8px; padding:9px 12px; text-align:left; border:1.5px solid #bfe4ee; border-radius:10px; background:#f6fdff; font-size:13px; color:#12414d; }
+.courseware-option b { color:#1398b1; }
+.courseware-option.right { border-color:#2fa36c; background:#eafaf1; }
+.courseware-option.wrong { border-color:var(--danger); background:#fdf0ee; }
+.courseware-right { margin:10px 0 0; color:#2fa36c; font-size:12px; font-weight:700; }
+.courseware-wrong { margin:10px 0 0; color:var(--danger); font-size:12px; font-weight:700; }
+.courseware-speak { display:inline-flex; align-items:center; gap:5px; margin-top:12px; padding:5px 12px; border:1.5px solid #9fd7e4; border-radius:999px; background:#fff; color:#0f7d96; font-size:11px; font-weight:800; }
+.courseware-speak.speaking { color:#fff; background:#1398b1; animation:voice-pulse 1.2s ease-in-out infinite; }
+.courseware-nav { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 12px; background:#dff4f9; }
+.courseware-nav button { display:inline-flex; align-items:center; gap:3px; padding:6px 14px; border:0; border-radius:999px; background:#1398b1; color:#fff; font-size:11px; font-weight:800; }
+.courseware-nav button:disabled { opacity:.4; cursor:not-allowed; }
+.courseware-dots { display:flex; gap:5px; }
+.courseware-dots i { width:7px; height:7px; border-radius:50%; background:#b7dde7; cursor:pointer; }
+.courseware-dots i.on { background:#0f7d96; }
 .assistant-window > footer { padding:0 14px 12px; color:#98a2b3; text-align:center; font-size:9px; }
 .assistant-error { margin:0 14px 8px; color:var(--danger); font-size:10px; }
 
@@ -5232,3 +5262,14 @@ body:has(main.experience-teen)::after {
   }
   .experience-teen .home-page > :not(.research-stage) { border-radius: 18px; }
 }
+
+/* 学生端已发布课件列表 */
+.coursewares-page .page-header { margin-bottom: 14px; }
+.coursewares-page .page-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.courseware-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.courseware-card { display: grid; gap: 8px; justify-items: start; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card, #fff); }
+.courseware-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #e3f6fb; color: #0f7d96; }
+.courseware-card h2 { margin: 0; font-size: 15px; line-height: 1.4; }
+.courseware-card-meta { margin: 0; color: var(--muted); font-size: 12px; }
+.courseware-card .button { margin-top: auto; }
+.back-button { margin-bottom: 10px; }

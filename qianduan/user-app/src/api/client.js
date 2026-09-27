@@ -220,4 +220,9 @@ export const speechApi = {
   }),
 };
 
+export const coursewareApi = {
+  listPublished: () => api("/api/v1/agents/courseware/published"),
+  getPublished: (coursewareId) => api(`/api/v1/agents/courseware/published/${encodeURIComponent(coursewareId)}`),
+};
+
 export { AUTH_STORAGE_KEY };

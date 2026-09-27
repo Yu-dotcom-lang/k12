@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { agentsApi, practiceApi, profileApi, speechApi, teachingResourcesApi } from "../api/client.js";
 import { blobToBase64, createVoiceRecorder } from "../utils/voiceInput.js";
 import { BubbleSortAnimation } from "./BubbleSortAnimation.jsx";
+import { CoursewarePlayer, isCoursewareArtifact } from "./CoursewarePlayer.jsx";
 import { MarkdownContent } from "./MarkdownContent.jsx";
 import { TeachingSteps } from "./TeachingSteps.jsx";
 import { topicCodeForId } from "../data/teachingTopics.js";
@@ -461,6 +462,8 @@ export function TeachingAssistantChat({
   const conversationRef = useRef(null);
   const proactiveSessionRef = useRef("");
   const voiceRecorderRef = useRef(null);
+  const voiceAutoSpeakRef = useRef(false);
+  const speakAudioRef = useRef(null);
   const stageCode = stageCodes[profile?.schoolStage];
   const isPage = variant === "page";
   const isLowerPrimary = agentCode === "lower-primary-tutor";
@@ -480,7 +483,32 @@ export function TeachingAssistantChat({
   useEffect(() => () => {
     voiceRecorderRef.current?.abort();
     voiceRecorderRef.current = null;
+    speakAudioRef.current?.pause();
+    speakAudioRef.current = null;
   }, []);
+
+  function stopSpeaking() {
+    speakAudioRef.current?.pause();
+    speakAudioRef.current = null;
+  }
+
+  // 语音提问后的回复自动朗读（仅当本轮用说话提问）。
+  async function speakReply(text) {
+    const content = String(text || "").trim();
+    if (!content) return;
+    stopSpeaking();
+    try {
+      const result = await speechApi.synthesize(content.slice(0, 800));
+      const audio = new Audio(URL.createObjectURL(result.blob));
+      speakAudioRef.current = audio;
+      audio.onended = () => {
+        speakAudioRef.current = null;
+      };
+      await audio.play();
+    } catch {
+      /* 朗读失败静默降级，不打断对话 */
+    }
+  }
 
   async function startVoiceInput() {
     if (recording || transcribing || sending || restoring) return;
@@ -524,7 +552,10 @@ export function TeachingAssistantChat({
         setVoiceError("小智没听清，请再说一遍");
         return;
       }
-      setQuestion((prev) => (prev ? `${prev} ${text}` : text));
+      // 语音闭环：识别成功直接提问，回复用声音答给孩子。
+      setQuestion("");
+      setVoiceError("");
+      ask(text, { speakReply: true });
     } catch (caught) {
       setVoiceError(caught?.message || "语音识别失败了，请稍后再试");
     } finally {
@@ -583,6 +614,9 @@ export function TeachingAssistantChat({
           const animationArtifact = Array.isArray(turn.artifacts)
             ? turn.artifacts.find((artifact) => artifact.kind === "ANIMATION")
             : null;
+          const coursewareArtifact = Array.isArray(turn.artifacts)
+            ? turn.artifacts.find((artifact) => isCoursewareArtifact(artifact))
+            : null;
           return [
             { role: "user", text: turn.userMessage, runId: turn.runId },
             {
@@ -593,6 +627,7 @@ export function TeachingAssistantChat({
               guidedTurn: metadata.guidedConversation || null,
               animationArtifact,
               gameArtifact,
+              coursewareArtifact,
               runId: turn.runId,
             },
           ];
@@ -623,13 +658,15 @@ export function TeachingAssistantChat({
     onTopicChange?.(null);
   }
 
-  async function ask(text, { topicId, preferDeterministic = false } = {}) {
+  async function ask(text, { topicId, preferDeterministic = false, speakReply: shouldSpeak = false } = {}) {
     const content = text.trim();
     if (!content || restoring || sending) return;
     if (!session) {
       onRequireLogin?.();
       return;
     }
+    voiceAutoSpeakRef.current = shouldSpeak;
+    stopSpeaking();
     if (topicId) onTopicChange?.(topicId);
     setQuestion("");
     setError("");
@@ -658,6 +695,9 @@ export function TeachingAssistantChat({
       const animationArtifact = Array.isArray(run.artifacts)
         ? run.artifacts.find((artifact) => artifact.kind === "ANIMATION")
         : null;
+      const coursewareArtifact = Array.isArray(run.artifacts)
+        ? run.artifacts.find((artifact) => isCoursewareArtifact(artifact))
+        : null;
       setConversation((current) => [...current, {
         role: "assistant",
         text: run.outputText || "讲解还在准备中，请稍后再问一次。",
@@ -666,8 +706,13 @@ export function TeachingAssistantChat({
         guidedTurn: metadata.guidedConversation || null,
         animationArtifact,
         gameArtifact,
+        coursewareArtifact,
         runId: run.runId,
       }]);
+      if (voiceAutoSpeakRef.current) {
+        voiceAutoSpeakRef.current = false;
+        speakReply(run.outputText);
+      }
     } catch (requestError) {
       setError(requestError.message);
       setConversation((current) => [...current, { role: "assistant", text: "暂时无法连接 AI 服务，请稍后重试。" }]);
@@ -803,6 +848,9 @@ export function TeachingAssistantChat({
                   disabled={sending || restoring}
                   onChoose={(value) => ask(value, { preferDeterministic: true })}
                 />
+              )}
+              {message.role === "assistant" && message.coursewareArtifact && (
+                <CoursewarePlayer artifact={message.coursewareArtifact} />
               )}
             </div>
           </div>
