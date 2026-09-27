@@ -9,6 +9,7 @@ import {
   Image,
   LoaderCircle,
   Play,
+  Puzzle,
   RotateCcw,
   Sparkles,
   Square,
@@ -184,6 +185,95 @@ print("结果：工具有白名单，外部写操作需要人工确认，重复�
 
 const INITIAL_CODE = CODE_EXAMPLES[0].code;
 
+// 练习骨架：同一实验的“填空”版本。占位符 ____ 是合法标识符，直接运行会报
+// NameError 并定位到待补全的行，正好衔接「帮我看报错」的代码教练。
+const CODE_SKELETONS = {
+  "average": `# 练习：把 ____ 换成正确的代码，算出平均分
+scores = [82, 95, 76, 88]
+total = ____
+average = total / ____
+print(f"平均分：{average:.1f}")
+# 目标输出：平均分：85.2`,
+  "bubble-sort": `# 练习：补全冒泡排序的“交换”一步
+values = [5, 2, 4, 1]
+print("开始:", values)
+n = len(values)
+for pass_no in range(1, n):
+    swapped = False
+    for i in range(0, n - pass_no):
+        left, right = values[i], values[i + 1]
+        if left > right:
+            # TODO: 交换相邻两个元素
+            # 提示：Python 支持 values[i], values[i + 1] = right, left
+            swapped = True
+    if not swapped:
+        break
+print("结果:", values)
+# 目标输出：结果: [1, 2, 4, 5]`,
+  "linear-search": `# 练习：补全“找到目标就记录下标并停止”
+values = [5, 2, 4, 1, 8, 3]
+target = 8
+print("查找目标:", target)
+found_at = None
+for index, value in enumerate(values):
+    # TODO: 如果 value 等于 target，把 index 记到 found_at，再 break
+    pass
+print("结果:", found_at if found_at is not None else "未找到")
+# 目标输出：结果: 3`,
+  "binary-search": `# 练习：补全“丢掉一半区间”的两行
+values = [1, 2, 4, 5, 7, 9]
+target = 5
+low, high = 0, len(values) - 1
+found_at = None
+while low <= high:
+    mid = (low + high) // 2
+    print(f"区间[{low},{high}] 中点 {mid} 值 {values[mid]}")
+    if values[mid] == target:
+        found_at = mid
+        break
+    # TODO: 目标比中点小时丢掉右半边，否则丢掉左半边
+print("结果:", found_at if found_at is not None else "未找到")
+# 目标输出：结果: 3`,
+  "chart": `# 练习：把数据换成你自己的一周学习时间
+import matplotlib
+matplotlib.use("Agg", force=True)
+import matplotlib.pyplot as plt
+from io import BytesIO
+from IPython.display import Image, display
+
+# TODO: 填上星期和对应的分钟数（两边数量要一样多）
+days = [____]
+minutes = [____]
+
+fig, ax = plt.subplots(figsize=(5, 3))
+ax.plot(days, minutes, marker="o")
+ax.set_ylabel("Minutes")
+fig.tight_layout()
+buffer = BytesIO()
+fig.savefig(buffer, format="png", dpi=100)
+display(Image(data=buffer.getvalue()))
+plt.close(fig)`,
+  "embedding-similarity": `# 练习：补全余弦相似度公式（点积 ÷ 长度之积）
+from math import sqrt
+
+vectors = {
+    "小猫": [0.95, 0.80, 0.10],
+    "小狗": [0.90, 0.75, 0.15],
+    "数据库": [0.10, 0.20, 0.95],
+}
+
+def cosine(left, right):
+    dot = ____
+    length_left = sqrt(sum(value * value for value in left))
+    length_right = ____
+    return dot / (length_left * length_right)
+
+query = vectors["小猫"]
+for name in ("小狗", "数据库"):
+    print(f"小猫 与 {name} 的余弦相似度: {cosine(query, vectors[name]):.3f}")
+# 目标：小猫和小狗的相似度明显高于数据库`,
+};
+
 const ACTIVE_STATUSES = new Set(["PENDING", "RUNNING"]);
 const STATUS_LABELS = {
   PENDING: "准备中",
@@ -200,6 +290,7 @@ const CODE_LAB_DOODLE = "/assets/code-lab-laptop-doodle.png";
 export function CodeLabPage({ session, requireLogin }) {
   const [code, setCode] = useState(INITIAL_CODE);
   const [exampleId, setExampleId] = useState(CODE_EXAMPLES[0].id);
+  const [practiceMode, setPracticeMode] = useState(false);
   const [mode, setMode] = useState("ASYNC");
   const [timeoutSeconds, setTimeoutSeconds] = useState(30);
   const [result, setResult] = useState(null);
@@ -217,7 +308,7 @@ export function CodeLabPage({ session, requireLogin }) {
       const next = CODE_EXAMPLES.find((example) => example.id === preferred);
       if (!next) return;
       setExampleId(next.id);
-      setCode(next.code);
+      setCode(activeVariant(next.id, practiceMode).text);
       setResult(null);
       setError("");
       setResultOpen(false);
@@ -229,7 +320,7 @@ export function CodeLabPage({ session, requireLogin }) {
     }
     window.addEventListener("k12-open-codelab", onOpenCodeLab);
     return () => window.removeEventListener("k12-open-codelab", onOpenCodeLab);
-  }, []);
+  }, [practiceMode]);
 
   useEffect(() => {
     if (!result?.runId || !ACTIVE_STATUSES.has(result.status)) return undefined;
@@ -290,13 +381,33 @@ export function CodeLabPage({ session, requireLogin }) {
     const current = CODE_EXAMPLES.find((example) => example.id === exampleId);
     const next = CODE_EXAMPLES.find((example) => example.id === nextId);
     if (!next) return false;
-    if (code !== current?.code && !window.confirm("当前代码将被替换，确定继续吗？")) return false;
+    if (code !== activeVariant().text && !window.confirm("当前代码将被替换，确定继续吗？")) return false;
     setExampleId(nextId);
-    setCode(next.code);
+    setCode(activeVariant(nextId, practiceMode).text);
     setResult(null);
     setError("");
     setResultOpen(false);
     return true;
+  }
+
+  // 当前示例在「示例 / 练习骨架」两种形态下的代码；切换时确认丢弃未保存修改。
+  function activeVariant(nextExampleId = exampleId, nextPractice = practiceMode) {
+    const example = CODE_EXAMPLES.find((item) => item.id === nextExampleId) || CODE_EXAMPLES[0];
+    const skeleton = nextPractice ? CODE_SKELETONS[example.id] : null;
+    return { text: skeleton || example.code, isSkeleton: Boolean(skeleton) };
+  }
+
+  function togglePracticeMode() {
+    const next = !practiceMode;
+    const variant = activeVariant(exampleId, next);
+    if (!variant.isSkeleton) return;
+    const current = activeVariant();
+    if (code !== current.text && !window.confirm("当前代码将被替换，确定切换吗？")) return;
+    setPracticeMode(next);
+    setCode(variant.text);
+    setResult(null);
+    setError("");
+    setResultOpen(false);
   }
 
   const active = submitting || ACTIVE_STATUSES.has(result?.status);
@@ -364,7 +475,17 @@ export function CodeLabPage({ session, requireLogin }) {
                   <option key={example.id} value={example.id}>{example.label}</option>
                 ))}
               </select>
-              <button className="icon-button" type="button" title="恢复示例代码" onClick={() => loadExample(exampleId)} disabled={active}>
+              <button
+                className={`icon-button practice-toggle${practiceMode ? " active" : ""}`}
+                type="button"
+                title={CODE_SKELETONS[exampleId] ? (practiceMode ? "当前为练习骨架，点击切回完整示例" : "切换到练习骨架：填空补全代码") : "该示例暂无练习骨架"}
+                aria-pressed={practiceMode}
+                onClick={togglePracticeMode}
+                disabled={active || !CODE_SKELETONS[exampleId]}
+              >
+                <Puzzle size={16} />
+              </button>
+              <button className="icon-button" type="button" title={practiceMode && CODE_SKELETONS[exampleId] ? "恢复练习骨架" : "恢复示例代码"} onClick={() => loadExample(exampleId)} disabled={active}>
                 <RotateCcw size={16} />
               </button>
             </div>
