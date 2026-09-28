@@ -220,6 +220,7 @@ public class K12ServletSecurityAutoConfiguration {
                                 "/api/v1/agents/code-executions",
                                 "/api/v1/agents/speech/synthesize",
                                 "/api/v1/agents/speech/recognize",
+                                "/api/v1/agents/quiz/generate",
                                 "/api/v1/agents/runs/*/cancel",
                                 "/api/v1/agents/runs/*/retry"
                         ).hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.AGENT_INVOKE)

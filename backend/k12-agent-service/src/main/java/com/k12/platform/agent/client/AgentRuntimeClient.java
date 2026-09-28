@@ -6,6 +6,7 @@ import com.k12.platform.agent.client.dto.RuntimeAgentRunResponse;
 import com.k12.platform.agent.client.dto.RuntimeCodeExecutionRequest;
 import com.k12.platform.agent.client.dto.RuntimeCodeExecutionResponse;
 import com.k12.platform.agent.client.dto.RuntimeCoursewareRequest;
+import com.k12.platform.agent.client.dto.RuntimeQuizRequest;
 import com.k12.platform.agent.client.dto.RuntimeDownloadUrlResponse;
 import com.k12.platform.agent.client.dto.RuntimeSpeechRecognitionResponse;
 import com.k12.platform.agent.client.dto.RuntimeSpeechRequest;
@@ -62,4 +63,8 @@ public interface AgentRuntimeClient {
     /** 管理端课件生成：由 Runtime 调用大模型产出课件 JSON 文档。 */
     @PostMapping("/internal/v1/courseware/generate")
     ApiResponse<JsonNode> generateCourseware(@RequestBody RuntimeCoursewareRequest request);
+
+    /** 学生端 AI 组题：由 Runtime 调用大模型按主题/课文出一组选择题。 */
+    @PostMapping("/internal/v1/quiz/generate")
+    ApiResponse<JsonNode> generateQuiz(@RequestBody RuntimeQuizRequest request);
 }

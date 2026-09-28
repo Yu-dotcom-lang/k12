@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from k12_agent_runtime.application.agents.run_agent import RunAgentUseCase
 from k12_agent_runtime.application.courseware import GenerateCoursewareUseCase
+from k12_agent_runtime.application.quiz import GenerateQuizUseCase
 from k12_agent_runtime.application.rag import (
     EmbedTextsUseCase,
     IndexDocumentUseCase,
@@ -73,6 +74,7 @@ class ApplicationContainer:
     synthesize_speech: SynthesizeSpeechUseCase
     recognize_speech: RecognizeSpeechUseCase
     generate_courseware: GenerateCoursewareUseCase
+    generate_quiz: GenerateQuizUseCase
 
     async def close(self) -> None:
         resources = [
@@ -116,6 +118,7 @@ def build_container(settings: Settings) -> ApplicationContainer:
     )
     # 新Agent需要在注册器中登记，接口才能通过agent_code找到它。
     generate_courseware = GenerateCoursewareUseCase(chat_model)
+    generate_quiz = GenerateQuizUseCase(chat_model)
     registry = InMemoryAgentRegistry(
         [
             DemoChartAgent(),
@@ -168,6 +171,7 @@ def build_container(settings: Settings) -> ApplicationContainer:
             settings.asr_max_audio_bytes,
         ),
         generate_courseware=generate_courseware,
+        generate_quiz=generate_quiz,
     )
 
 

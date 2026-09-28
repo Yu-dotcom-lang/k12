@@ -1,6 +1,7 @@
 package com.k12.platform.agent.web;
 
 import com.k12.platform.agent.service.SpeechRecognitionService;
+import com.k12.platform.common.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,9 +24,9 @@ public class SpeechRecognitionController {
     }
 
     @PostMapping("/recognize")
-    public TranscriptionResponse recognize(@Valid @RequestBody RecognitionRequest request) {
+    public ApiResponse<TranscriptionResponse> recognize(@Valid @RequestBody RecognitionRequest request) {
         SpeechRecognitionService.Transcript transcript = service.recognize(decode(request.audioBase64()));
-        return new TranscriptionResponse(transcript.text(), transcript.model());
+        return ApiResponse.ok(new TranscriptionResponse(transcript.text(), transcript.model()));
     }
 
     private byte[] decode(String rawBase64) {

@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpenText, CalendarCheck2, CheckCircle2, Clock3, FileText, LoaderCircle, RotateCcw, Sparkles, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { coursesApi, homeworksApi } from "../api/client.js";
+import { coursesApi, homeworksApi, profileApi } from "../api/client.js";
+import { QuizRunner } from "../components/QuizRunner.jsx";
 import { LearningCalendar } from "../components/LearningCalendar.jsx";
 import { EXPERIENCE } from "../experience/experience.js";
 import { visualsFor } from "../experience/visualAssets.js";
@@ -13,6 +14,8 @@ export function TasksPage({ session, requireLogin, navigate, experience = EXPERI
   const [learningEvents, setLearningEvents] = useState([]);
   const [loading, setLoading] = useState(Boolean(session));
   const [error, setError] = useState("");
+  const [quizTopic, setQuizTopic] = useState("");
+  const [stage, setStage] = useState("lower_primary");
 
   async function load() {
     if (!session) {
@@ -50,6 +53,15 @@ export function TasksPage({ session, requireLogin, navigate, experience = EXPERI
 
   useEffect(() => {
     load();
+    if (!session) return;
+    profileApi.getLearningProfile().then((profile) => {
+      setStage(({
+        PRIMARY_LOWER: "lower_primary",
+        PRIMARY_UPPER: "upper_primary",
+        JUNIOR_HIGH: "middle_school",
+        SENIOR_HIGH: "high_school",
+      })[profile?.schoolStage] || (experience === EXPERIENCE.PRIMARY ? "lower_primary" : "middle_school"));
+    }).catch(() => {});
   }, [session]);
 
   const visibleItems = useMemo(() => {
@@ -89,6 +101,12 @@ export function TasksPage({ session, requireLogin, navigate, experience = EXPERI
     ? Math.round(courseHistory.reduce((sum, item) => sum + Number(item.progressPercent || 0), 0) / courseHistory.length)
     : 0;
   const completionRate = items.length ? Math.round((counts.done / items.length) * 100) : 0;
+  const quizTopics = [
+    ...(activeCourse?.courseTitle ? [activeCourse.courseTitle] : []),
+    ...(primary
+      ? ["生活中的信息", "分享与交流", "保护我自己"]
+      : ["身边的算法", "互联网应用", "人工智能基础"]),
+  ].filter((item, index, list) => list.indexOf(item) === index).slice(0, 4);
   const calendarEvents = useMemo(
     () => buildCalendarEvents(items, submissionsByHomework, courseHistory, learningEvents, openHomework, navigate),
     [items, submissionsByHomework, courseHistory, learningEvents, navigate],
@@ -191,6 +209,36 @@ export function TasksPage({ session, requireLogin, navigate, experience = EXPERI
               <div className="progress-track"><span style={{ width: `${Math.min(100, Math.max(0, Number(activeCourse.progressPercent || 0)))}%` }} /></div>
               <button type="button" onClick={() => navigate(`courses/${activeCourse.courseId}`)}>继续课程<ArrowRight size={15} /></button>
             </> : <p className="task-widget-empty">报名课程后，这里会显示最近的学习进度。</p>}
+          </section>
+          <section className="task-widget quiz-widget">
+            <header className="task-widget-heading">
+              <span><Sparkles size={18} /></span>
+              <div><strong>{primary ? "AI 出题挑战" : "AI 组题练习"}</strong><small>不用等老师发布，想练就练</small></div>
+            </header>
+            <div className="quiz-topic-row">
+              {quizTopics.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`quiz-topic-chip${quizTopic === item ? " active" : ""}`}
+                  onClick={() => setQuizTopic(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            {quizTopic ? (
+              <QuizRunner
+                key={quizTopic}
+                topic={quizTopic}
+                stage={stage}
+                title={`「${quizTopic}」AI 挑战`}
+                variant="card"
+                cta={primary ? "开始挑战" : "生成练习题"}
+              />
+            ) : (
+              <p className="task-widget-empty">选一个主题，小智马上给你出题！</p>
+            )}
           </section>
           <section className="task-widget task-rhythm-widget">
             <header><span>{completionRate}%</span><div><strong>{primary ? "成长能量" : "作业完成率"}</strong><small>{counts.done}/{items.length || 0} 项已形成完整反馈</small></div></header>
