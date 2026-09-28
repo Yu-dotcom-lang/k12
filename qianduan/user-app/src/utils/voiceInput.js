@@ -15,11 +15,29 @@ export function createVoiceRecorder({ onAutoStop } = {}) {
 
   async function start() {
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error("这个浏览器不能录音，请换 Chrome 试试");
+      throw new Error("这个浏览器不能录音，用电脑 Chrome 或手机自带的浏览器打开就能说话啦");
     }
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // 关掉回声消除/降噪会让识别更稳，手机浏览器尤其需要
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
     const Context = window.AudioContext || window.webkitAudioContext;
     audioContext = new Context({ sampleRate: TARGET_SAMPLE_RATE });
+    // 手机浏览器的自动播放策略会把音频上下文挂起，不 resume 就录不到任何声音
+    if (audioContext.state === "suspended") {
+      try {
+        await audioContext.resume();
+      } catch {
+        /* 部分 webview 不支持，靠下面的采样检查兜底 */
+      }
+    }
+    if (audioContext.state !== "running") {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+      audioContext.close().catch(() => {});
+      audioContext = null;
+      throw new Error("麦克风没准备好，请再点一次试试");
+    }
     sourceNode = audioContext.createMediaStreamSource(mediaStream);
     processor = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
     processor.onaudioprocess = (event) => {

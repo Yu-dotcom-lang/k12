@@ -541,9 +541,13 @@ export function TeachingAssistantChat({
   async function transcribeRecording(recorder) {
     setTranscribing(true);
     try {
-      const { blob } = await recorder.stop();
+      const { blob, seconds } = await recorder.stop();
       if (!blob || blob.size < 1000) {
         setVoiceError("好像没录到声音，请靠近一点再说一遍");
+        return;
+      }
+      if (seconds < 0.8) {
+        setVoiceError("话太短啦，点一下说话，讲完再点一下方块");
         return;
       }
       const result = await speechApi.recognize(await blobToBase64(blob), "audio/wav");
