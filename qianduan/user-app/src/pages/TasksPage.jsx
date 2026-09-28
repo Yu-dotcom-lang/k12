@@ -15,7 +15,7 @@ export function TasksPage({ session, requireLogin, navigate, experience = EXPERI
   const [loading, setLoading] = useState(Boolean(session));
   const [error, setError] = useState("");
   const [quizTopic, setQuizTopic] = useState("");
-  const [stage, setStage] = useState("lower_primary");
+  const [stage, setStage] = useState(experience === EXPERIENCE.PRIMARY ? "lower_primary" : "middle_school");
 
   async function load() {
     if (!session) {
@@ -55,14 +55,21 @@ export function TasksPage({ session, requireLogin, navigate, experience = EXPERI
     load();
     if (!session) return;
     profileApi.getLearningProfile().then((profile) => {
-      setStage(({
+      // 题目难度跟随当前所在端：中学端只出中学题，小学端只出小学题；
+      // 档案学段仅在同端内细分（如初中/高中），跨端浏览时不把小孩的题带给中学生。
+      const primaryPage = experience === EXPERIENCE.PRIMARY;
+      const profileStage = ({
         PRIMARY_LOWER: "lower_primary",
         PRIMARY_UPPER: "upper_primary",
         JUNIOR_HIGH: "middle_school",
         SENIOR_HIGH: "high_school",
-      })[profile?.schoolStage] || (experience === EXPERIENCE.PRIMARY ? "lower_primary" : "middle_school"));
+      })[profile?.schoolStage];
+      const fitsPage = primaryPage
+        ? profileStage === "lower_primary" || profileStage === "upper_primary"
+        : profileStage === "middle_school" || profileStage === "high_school";
+      setStage(fitsPage ? profileStage : (primaryPage ? "lower_primary" : "middle_school"));
     }).catch(() => {});
-  }, [session]);
+  }, [session, experience]);
 
   const visibleItems = useMemo(() => {
     if (tab === "全部") return items;
