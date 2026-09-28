@@ -1040,6 +1040,43 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 @keyframes voice-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(224,90,71,.45); } 50% { box-shadow:0 0 0 6px rgba(224,90,71,0); } }
 .voice-hint { margin:0 14px 8px; color:#69808b; font-size:10px; font-weight:700; }
 .voice-hint-error { color:var(--danger); }
+/* 录音实时音量条：让孩子看见"小智听到声音了" */
+.voice-level { display:inline-flex; gap:3px; align-items:center; margin-left:8px; vertical-align:-2px; }
+.voice-level i { width:5px; height:12px; border-radius:2px; background:#cfdde3; transition:background .12s; }
+.voice-level i.on { background:#1398b1; }
+
+/* AI 组题（随堂练习做一做 / 趣味任务挑战 / 作业练习组题共用） */
+.quiz-runner { margin:12px 0 4px; border:2px dashed #b5dbe6; border-radius:14px; background:#f4fbfe; padding:12px 14px; }
+.quiz-runner-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.quiz-runner-head strong { font-size:14px; color:#1c4d58; }
+.quiz-runner-badge { display:inline-flex; align-items:center; gap:4px; background:#dff2f8; color:#0e7f96; border-radius:999px; padding:3px 9px; font-size:10px; font-weight:800; }
+.quiz-runner-sub { margin:0 0 8px; color:#5c7a84; font-size:12px; }
+.quiz-runner-start { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+.quiz-runner-error { color:var(--danger); font-size:12px; font-weight:700; }
+.quiz-runner-loading { display:flex; align-items:center; gap:8px; color:#0e7f96; font-weight:700; font-size:13px; }
+.quiz-runner-progress { margin:2px 0 4px; color:#69808b; font-size:11px; font-weight:800; }
+.quiz-runner-stem { margin:0 0 10px; font-size:15px; line-height:1.55; color:#173a44; }
+.quiz-runner-options { display:flex; flex-direction:column; gap:8px; }
+.quiz-runner-option { display:flex; align-items:center; gap:9px; width:100%; text-align:left; border:2px solid var(--line); background:#fff; border-radius:11px; padding:9px 12px; font-size:13px; cursor:pointer; transition:border-color .12s, background .12s; }
+.quiz-runner-option b { flex:0 0 auto; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#eef5f7; color:#0e7f96; font-size:11px; }
+.quiz-runner-option.right { border-color:#2e9e6b; background:#edfaf3; }
+.quiz-runner-option.right b { background:#2e9e6b; color:#fff; }
+.quiz-runner-option.wrong { border-color:var(--danger); background:#fdf0ee; }
+.quiz-runner-option.wrong b { background:var(--danger); color:#fff; }
+.quiz-runner-option .quiz-mark { margin-left:auto; flex:0 0 auto; }
+.quiz-runner-explain { margin-top:10px; border-radius:10px; background:#fff; border:1px solid var(--line); padding:10px 12px; }
+.quiz-runner-explain p { margin:0 0 4px; font-size:12px; }
+.quiz-runner-explain .quiz-right { color:#2e9e6b; font-weight:800; }
+.quiz-runner-explain .quiz-wrong { color:var(--danger); font-weight:800; }
+.quiz-runner-explain .button { margin-top:8px; }
+.quiz-runner-result { text-align:center; padding:6px 0 2px; }
+.quiz-runner-score { font-size:26px; font-weight:900; color:#0e7f96; margin:2px 0 4px; }
+.quiz-runner-praise { margin:0 0 10px; color:#41626d; font-size:13px; font-weight:700; }
+.quiz-runner-actions { display:flex; gap:8px; justify-content:center; }
+.quiz-card { margin:8px 0 0; }
+.quiz-topic-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.quiz-topic-chip { border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; color:#41626d; cursor:pointer; }
+.quiz-topic-chip.active { background:var(--blue); border-color:var(--blue); color:#fff; }
 
 /* AI 课件播放器（对话内生成 + 独立页共用） */
 .courseware-player { margin:10px 0 4px; border:2px solid #9fd7e4; border-radius:14px; background:#f2fcff; overflow:hidden; }

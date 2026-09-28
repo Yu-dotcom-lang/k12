@@ -457,11 +457,15 @@ export function TeachingAssistantChat({
   const [conversation, setConversation] = useState([greeting]);
   const [lastTopicCode, setLastTopicCode] = useState(null);
   const [recording, setRecording] = useState(false);
+  const [micReady, setMicReady] = useState(false);
+  const [micLevel, setMicLevel] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState("");
   const conversationRef = useRef(null);
   const proactiveSessionRef = useRef("");
   const voiceRecorderRef = useRef(null);
+  const micLevelRef = useRef(0);
+  const micWatchRef = useRef(0);
   const voiceAutoSpeakRef = useRef(false);
   const speakAudioRef = useRef(null);
   const stageCode = stageCodes[profile?.schoolStage];
@@ -481,6 +485,7 @@ export function TeachingAssistantChat({
 
   // 低年级语音输入：再点一次结束录音；组件卸载或切换会话时放弃录音。
   useEffect(() => () => {
+    window.clearTimeout(micWatchRef.current);
     voiceRecorderRef.current?.abort();
     voiceRecorderRef.current = null;
     speakAudioRef.current?.pause();
@@ -513,11 +518,33 @@ export function TeachingAssistantChat({
   async function startVoiceInput() {
     if (recording || transcribing || sending || restoring) return;
     setVoiceError("");
+    setMicReady(false);
+    setMicLevel(0);
+    micLevelRef.current = 0;
     const recorder = createVoiceRecorder({
       onAutoStop: () => {
+        window.clearTimeout(micWatchRef.current);
         setRecording(false);
         voiceRecorderRef.current = null;
         transcribeRecording(recorder);
+      },
+      // 第一帧音频到达才算真正开始收声，提示孩子此时再开口（之前开口会丢字）
+      onReady: () => {
+        setMicReady(true);
+        window.clearTimeout(micWatchRef.current);
+        micWatchRef.current = window.setTimeout(() => {
+          if (micLevelRef.current < 0.02) {
+            window.clearTimeout(micWatchRef.current);
+            voiceRecorderRef.current?.abort();
+            voiceRecorderRef.current = null;
+            setRecording(false);
+            setVoiceError("小智一点声音都没听到，请在设置里允许麦克风，或者换个浏览器再试");
+          }
+        }, 3000);
+      },
+      onLevel: (value) => {
+        micLevelRef.current = Math.max(micLevelRef.current, value);
+        setMicLevel(value);
       },
     });
     try {
@@ -533,6 +560,7 @@ export function TeachingAssistantChat({
   function stopVoiceInput() {
     const recorder = voiceRecorderRef.current;
     if (!recorder) return;
+    window.clearTimeout(micWatchRef.current);
     voiceRecorderRef.current = null;
     setRecording(false);
     transcribeRecording(recorder);
@@ -541,13 +569,22 @@ export function TeachingAssistantChat({
   async function transcribeRecording(recorder) {
     setTranscribing(true);
     try {
-      const { blob, seconds } = await recorder.stop();
+      const { blob, seconds, peak } = await recorder.stop();
       if (!blob || blob.size < 1000) {
         setVoiceError("好像没录到声音，请靠近一点再说一遍");
         return;
       }
       if (seconds < 0.8) {
         setVoiceError("话太短啦，点一下说话，讲完再点一下方块");
+        return;
+      }
+      // 录到的是静音/底噪：ASR 必然"听不清"，直接告诉孩子怎么解决
+      if (peak < 0.015) {
+        setVoiceError("小智一点声音都没听到，请在设置里允许麦克风，或者换个浏览器再试");
+        return;
+      }
+      if (peak < 0.06) {
+        setVoiceError("声音有点小，靠近一点、大声一点，小智才听得清");
         return;
       }
       const result = await speechApi.recognize(await blobToBase64(blob), "audio/wav");
@@ -906,7 +943,20 @@ export function TeachingAssistantChat({
       </form>
       {isLowerPrimary && (voiceError || recording) && (
         <p className={voiceError ? "voice-hint voice-hint-error" : "voice-hint"}>
-          {voiceError || (recording ? "小智在听你说啦，讲完点一下方块" : "")}
+          {voiceError || (
+            <>
+              {!micReady ? "麦克风准备中…"
+                : micLevel < 0.02 ? "小智在听你说啦，大声一点"
+                  : "小智在听你说啦，讲完点一下方块"}
+              {micReady && (
+                <span className="voice-level" aria-hidden="true">
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <i key={i} className={micLevel > (i + 1) * 0.09 ? "on" : ""} />
+                  ))}
+                </span>
+              )}
+            </>
+          )}
         </p>
       )}
       <footer>{isLowerPrimary ? "一次学一点，答错也没关系" : "AI 回答仅供学习参考"}</footer>

@@ -1,23 +1,27 @@
 // 低年级语音输入：浏览器录音转成 16kHz 单声道 WAV，交给云端识别。
-// 使用 ScriptProcessor 逐帧采集（各端浏览器兼容），停止时线性重采样后编码 WAV。
+// 使用 ScriptProcessor 逐帧采集（各端浏览器兼容）；采样率不是 16k 时用
+// OfflineAudioContext 重采样（浏览器原生抗混叠，手工线性插值会引入混叠噪声）。
 const TARGET_SAMPLE_RATE = 16_000;
 const MAX_SECONDS = 30;
 const BUFFER_SIZE = 4096;
 
-export function createVoiceRecorder({ onAutoStop } = {}) {
+export function createVoiceRecorder({ onAutoStop, onReady, onLevel } = {}) {
   let audioContext = null;
   let mediaStream = null;
   let sourceNode = null;
   let processor = null;
   let samples = [];
   let startedAt = 0;
-  let finished = false;
+  let finished = true;
+  let readyNotified = false;
+  let autoStopFired = false;
+  let peakLevel = 0;
 
   async function start() {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("这个浏览器不能录音，用电脑 Chrome 或手机自带的浏览器打开就能说话啦");
     }
-    // 关掉回声消除/降噪会让识别更稳，手机浏览器尤其需要
+    // 打开回声消除/降噪/自动增益，手机浏览器识别更稳
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
@@ -40,12 +44,30 @@ export function createVoiceRecorder({ onAutoStop } = {}) {
     }
     sourceNode = audioContext.createMediaStreamSource(mediaStream);
     processor = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
+    samples = [];
+    finished = false;
+    readyNotified = false;
+    autoStopFired = false;
+    peakLevel = 0;
     processor.onaudioprocess = (event) => {
       if (finished) return;
       const input = event.inputBuffer.getChannelData(0);
       samples.push(new Float32Array(input));
-      if ((Date.now() - startedAt) / 1000 >= MAX_SECONDS) {
-        finish();
+      // 第一帧到达才算真正开始收声：之前的空窗期开口会丢字
+      if (!readyNotified) {
+        readyNotified = true;
+        onReady?.();
+      }
+      let framePeak = 0;
+      for (let i = 0; i < input.length; i += 1) {
+        const value = Math.abs(input[i]);
+        if (value > framePeak) framePeak = value;
+      }
+      if (framePeak > peakLevel) peakLevel = framePeak;
+      onLevel?.(framePeak);
+      // 只触发一次，由组件回调 stop() 取走录音（samples 不能在这里消费）
+      if (!autoStopFired && (Date.now() - startedAt) / 1000 >= MAX_SECONDS) {
+        autoStopFired = true;
         onAutoStop?.();
       }
     };
@@ -81,22 +103,52 @@ export function createVoiceRecorder({ onAutoStop } = {}) {
     audioContext = null;
   }
 
-  function finish() {
-    const merged = collect();
-    const seconds = (Date.now() - startedAt) / 1000;
-    const rate = audioContext?.sampleRate || TARGET_SAMPLE_RATE;
-    teardown();
-    return { blob: encodeWav(merged, rate), seconds };
+  /** 浏览器原生重采样（带抗混叠滤波）；不支持时退回线性插值。 */
+  function resampleToFallback(merged, sourceRate) {
+    const rate = sourceRate || TARGET_SAMPLE_RATE;
+    if (rate === TARGET_SAMPLE_RATE || !merged.length) {
+      return Promise.resolve(merged);
+    }
+    try {
+      const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const length = Math.max(1, Math.ceil((merged.length * TARGET_SAMPLE_RATE) / rate));
+      const offline = new OfflineContext(1, length, TARGET_SAMPLE_RATE);
+      const buffer = offline.createBuffer(1, merged.length, rate);
+      buffer.copyToChannel(merged, 0);
+      const source = offline.createBufferSource();
+      source.buffer = buffer;
+      source.connect(offline.destination);
+      source.start();
+      return offline
+        .startRendering()
+        .then((rendered) => rendered.getChannelData(0).slice());
+    } catch {
+      const ratio = rate / TARGET_SAMPLE_RATE;
+      const length = Math.max(1, Math.floor(merged.length / ratio));
+      const pcm = new Float32Array(length);
+      for (let i = 0; i < length; i += 1) {
+        const position = i * ratio;
+        const left = Math.floor(position);
+        const right = Math.min(left + 1, merged.length - 1);
+        pcm[i] = merged[left] * (1 - (position - left)) + merged[right] * (position - left);
+      }
+      return Promise.resolve(pcm);
+    }
   }
 
   async function stop() {
-    const result = finish();
+    const merged = collect();
+    const rate = audioContext?.sampleRate || TARGET_SAMPLE_RATE;
+    const seconds = (Date.now() - startedAt) / 1000;
+    const peak = peakLevel;
+    teardown();
     samples = [];
-    return result;
+    const resampled = await resampleToFallback(merged, rate);
+    return { blob: encodeWav(resampled), seconds, peak };
   }
 
   function abort() {
-    finish();
+    teardown();
     samples = [];
   }
 
@@ -112,16 +164,10 @@ export function blobToBase64(blob) {
   });
 }
 
-function encodeWav(samples, sourceRate) {
-  const ratio = (sourceRate || TARGET_SAMPLE_RATE) / TARGET_SAMPLE_RATE;
-  const length = Math.max(1, Math.floor(samples.length / ratio));
-  const pcm = new Int16Array(length);
-  for (let i = 0; i < length; i += 1) {
-    const position = i * ratio;
-    const left = Math.floor(position);
-    const right = Math.min(left + 1, samples.length - 1);
-    const value = samples[left] * (1 - (position - left)) + samples[right] * (position - left);
-    pcm[i] = Math.round(Math.max(-1, Math.min(1, value)) * 32_767);
+function encodeWav(samples) {
+  const pcm = new Int16Array(samples.length);
+  for (let i = 0; i < samples.length; i += 1) {
+    pcm[i] = Math.round(Math.max(-1, Math.min(1, samples[i])) * 32_767);
   }
   const buffer = new ArrayBuffer(44 + pcm.length * 2);
   const view = new DataView(buffer);
