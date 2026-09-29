@@ -140,20 +140,10 @@ export function AiStudioPage({
         experience={experience}
         eyebrow={primary ? "小智陪伴课堂" : "云端研究学院 · AI 学习台"}
         title={primary ? "问问小智" : "AI 学习台"}
-        description={primary ? "挑一个好奇的问题，小智会用故事、例子和小挑战陪你学会它。" : "选择左侧主题开始学习；右侧对话窗可随时提问、看讲解与小测。"}
+        description={primary ? "左边的图画卡片挑一张点一点，小智就用故事、例子和小挑战陪你学会它。" : "选择左侧主题开始学习；右侧对话窗可随时提问、看讲解与小测。"}
         imageKey="assistant"
       >
-        {primary ? (
-          <div className="hero-starter-row" aria-label="挑一张喜欢的图画，点一下就开始和小智聊">
-            {primaryChatStarters.map((starter) => (
-              <button key={starter.id} type="button" className="primary-starter-card" onClick={() => askStarter(starter)}>
-                <img src={starter.image} alt="" loading="lazy" />
-                <strong>{starter.label}</strong>
-                <small>{starter.question}</small>
-              </button>
-            ))}
-          </div>
-        ) : (
+        {!primary && (
           <div className="hero-question-row" aria-label="热门问题，点击即可向小智提问">
             <span className="hero-question-label"><Sparkles size={13} />大家都在问</span>
             {QUICK_QUESTIONS.map((question) => (
@@ -181,7 +171,23 @@ export function AiStudioPage({
         style={{ gridTemplateColumns: `${railWidth}px 6px minmax(0, 1fr)` }}
       >
         {primary ? (
-          <PrimaryLearningGuide session={session} navigate={navigate} onAskTopic={askPrimaryTopic} schoolStage={schoolStage} requireLogin={requireLogin} />
+          <div className="primary-ask-rail">
+            <section className="primary-starter-panel" aria-label="挑一张图画，问问小智">
+              <header className="primary-starter-head"><Sparkles size={15} />挑一张图，问问小智</header>
+              <div className="primary-starter-list">
+                {primaryChatStarters.map((starter) => (
+                  <button key={starter.id} type="button" className="primary-starter-item" onClick={() => askStarter(starter)}>
+                    <img src={starter.image} alt="" loading="lazy" />
+                    <span>
+                      <strong>{starter.label}</strong>
+                      <small>{starter.question}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+            <PrimaryLearningGuide session={session} navigate={navigate} onAskTopic={askPrimaryTopic} schoolStage={schoolStage} requireLogin={requireLogin} />
+          </div>
         ) : <aside className="ai-topic-rail" aria-label="推荐学习主题">
           <div className="ai-topic-rail-head">
             <Bot size={16} />

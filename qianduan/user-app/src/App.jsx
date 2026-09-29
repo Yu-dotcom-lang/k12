@@ -4,7 +4,6 @@ import { getStoredSession, login, logout, register } from "./api/auth.js";
 import { FloatingAssistant } from "./components/FloatingAssistant.jsx";
 import { ProfileSettingsModal } from "./components/ProfileSettingsModal.jsx";
 import { SiteHeader } from "./components/SiteHeader.jsx";
-import { PrimarySideNav } from "./components/PrimarySideNav.jsx";
 import { AiStudioPage } from "./pages/AiStudioPage.jsx";
 import { CodeLabPage } from "./pages/CodeLabPage.jsx";
 import { CatRecognitionLessonPage } from "./pages/CatRecognitionLessonPage.jsx";
@@ -238,10 +237,6 @@ export function App() {
   const [profile, setProfile] = useState(null);
   const [learningProfile, setLearningProfile] = useState(null);
   const [experience, setExperience] = useState(() => readStoredExperience() || EXPERIENCE.TEEN);
-  // 一二年级走左边栏导航（顶部栏保持干净）；高年级与初高中沿用顶部导航。
-  // 没建学习档案的小学端默认也走左边栏（低年级孩子最常见），做完诊断明确高年级后才切回顶部导航。
-  const isLowerPrimary = experience === EXPERIENCE.PRIMARY
-    && learningProfile?.schoolStage !== "PRIMARY_UPPER";
   const displayName = useMemo(
     () => profile?.nickname || session?.user?.username || "同学",
     [profile, session],
@@ -481,7 +476,7 @@ export function App() {
 
   return (
     <main
-      className={`student-experience experience-${experience}${isLowerPrimary ? " lower-primary-shell" : ""}`}
+      className={`student-experience experience-${experience}`}
       data-experience={experience}
       style={experienceArtStyle}
     >
@@ -509,7 +504,6 @@ export function App() {
         onExperienceChange={changeExperience}
       />
       <div className="route-view" key={`${experience}:${route.page}`}>{content}</div>
-      {isLowerPrimary && <PrimarySideNav page={route.nav} navigate={navigate} />}
       <footer className="site-footer">
         <button className="brand brand-button" type="button" onClick={() => navigate("home")}>
           <span className="brand-mark"><img src={footerMascot} alt="" /></span><span>EduGraph AI</span>
