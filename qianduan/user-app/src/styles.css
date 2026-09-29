@@ -2254,12 +2254,39 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 .next-lesson-card p { margin:0; color:#475467; }
 .reward-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
 
+/* 离线兜底提示（小智没连上时） */
+.cat-lesson-notice { margin:-6px 0 18px; padding:12px 16px; color:#694b00; border:1px solid #f1d68b; border-radius:6px; background:#fff9e8; font-weight:750; }
+
+/* 编程小任务：指令排序（第一/二课课堂内共用） */
+.instruction-order { padding:34px; border:1px solid #cfe5ee; border-radius:6px; background:#fff; }
+.instruction-order h1 { margin:8px 0 12px; }
+.instruction-order > header > p:not(.eyebrow) { max-width:640px; margin:0; color:#475467; font-size:17px; line-height:1.7; }
+.instruction-sequence { display:grid; gap:10px; margin:24px 0; }
+.instruction-slot { display:flex; align-items:center; gap:14px; min-height:58px; padding:10px 14px; border:2px dashed #cfe0e8; border-radius:8px; background:#f8fcfe; }
+.instruction-slot.filled { border-style:solid; border-color:#9fd9ec; background:#eefaff; }
+.instruction-slot small { flex:none; color:#0875ad; font-size:12px; font-weight:800; white-space:nowrap; }
+.instruction-slot span { display:flex; align-items:center; gap:10px; font-weight:750; }
+.instruction-slot i { font-style:normal; font-size:26px; }
+.instruction-empty { color:#9ab4c0; }
+.instruction-pool { display:flex; flex-wrap:wrap; gap:12px; margin:6px 0 18px; }
+.instruction-card { display:inline-flex; align-items:center; gap:10px; min-height:56px; padding:10px 16px; color:#075f7d; border:2px solid #b9dceb; border-radius:999px; background:#fff; font:inherit; font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 4px 12px -8px rgba(8,95,125,.35); transition:transform .15s ease, border-color .15s ease; }
+.instruction-card:hover:not(:disabled) { border-color:#28a7cc; transform:translateY(-2px); }
+.instruction-card i { font-style:normal; font-size:24px; }
+.instruction-tools { display:flex; flex-wrap:wrap; gap:10px; }
+.instruction-feedback { margin:0 0 14px; padding:10px 14px; color:#694b00; border:1px solid #f1d68b; border-radius:6px; background:#fff9e8; font-weight:750; }
+.instruction-success { display:grid; justify-items:start; gap:12px; margin-bottom:6px; padding:18px; border:1px solid #b7e4d2; border-radius:8px; background:#effaf7; }
+.instruction-success p { display:flex; align-items:center; gap:8px; margin:0; color:#146c43; font-weight:750; }
+
+/* 第二课题目用 emoji 场景串，比单只动物小一号 */
+.scene-visual { font-size:52px; letter-spacing:8px; }
+
 @media (max-width:760px) {
   .cat-lesson-header,.picture-book > header,.picture-book > footer { align-items:flex-start; flex-direction:column; }
   .cat-progress { width:100%; min-width:0; }
   .stage-choice-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .cat-lesson-intro,.picture-book-spread,.cat-explanation,.cat-reward { grid-template-columns:1fr; }
-  .cat-lesson-intro,.picture-book,.cat-explanation,.cat-classification-game,.cat-reward { padding:22px; }
+  .cat-lesson-intro,.picture-book,.cat-explanation,.cat-classification-game,.cat-reward,.instruction-order { padding:22px; }
+  .instruction-card { width:100%; justify-content:flex-start; border-radius:12px; }
   .picture-book-copy { padding:26px; }
   .classification-options { grid-template-columns:1fr; }
   .cat-badge { max-width:230px; margin:auto; }

@@ -17,15 +17,19 @@ import {
   knowledgeGraphApi,
   practiceApi,
   profileApi,
-  speechApi,
   pictureBooksApi,
 } from "../api/client.js";
 import {
   CAT_KNOWLEDGE_CODE,
+  catCommandGame,
   catPictureBook,
+  fallbackExplainText,
+  fallbackPictureQuiz,
   fallbackRecommendation,
   lessonProgress,
 } from "../data/catRecognitionLesson.js";
+import { InstructionOrderGame } from "../components/InstructionOrderGame.jsx";
+import { useReadAloud } from "../hooks/useReadAloud.js";
 import { MarkdownContent } from "../components/MarkdownContent.jsx";
 import { normalizePictureBook } from "../data/pictureBookFallback.js";
 
@@ -53,10 +57,10 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [speechState, setSpeechState] = useState("");
+  const [notice, setNotice] = useState("");
+  const [fallbackUsed, setFallbackUsed] = useState(false);
   const [pictureBook, setPictureBook] = useState(catPictureBook);
-  const audioRef = useRef(null);
-  const audioUrlRef = useRef(null);
+  const { speechState, readAloud, stopSpeech } = useReadAloud();
   const gameStartedAtRef = useRef(null);
 
   useEffect(() => {
@@ -75,8 +79,6 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
       .finally(() => { if (active) setProfileLoading(false); });
     return () => { active = false; };
   }, [session]);
-
-  useEffect(() => () => stopSpeech(), []);
 
   useEffect(() => {
     let active = true;
@@ -118,53 +120,12 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
     }
   }
 
-  function stopSpeech() {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
-    window.speechSynthesis?.cancel();
-    setSpeechState("");
-  }
-
-  async function readAloud(text) {
-    const speechText = toSpeechText(text);
-    if (!speechText) return;
-    stopSpeech();
-    setSpeechState("正在准备百炼云语音…");
-    try {
-      const audioResult = await speechApi.synthesize(speechText);
-      const url = URL.createObjectURL(audioResult.blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audioUrlRef.current = url;
-      audio.onplay = () => setSpeechState("百炼云语音正在朗读");
-      audio.onended = () => stopSpeech();
-      audio.onerror = () => browserReadAloud(speechText, "云端音频播放失败");
-      await audio.play();
-    } catch (requestError) {
-      browserReadAloud(speechText, requestError?.message);
-    }
-  }
-
-  function browserReadAloud(text, cloudError) {
-    if (!("speechSynthesis" in window)) {
-      setSpeechState("语音暂时不可用，请阅读屏幕文字");
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "zh-CN";
-    utterance.rate = 0.9;
-    utterance.onend = () => setSpeechState("");
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-    setSpeechState(cloudError
-      ? `百炼云语音未连接（${cloudError}），已切换浏览器朗读`
-      : "已切换浏览器朗读");
+  /** 小智没准备好时切换内置离线题目，课堂不中断。 */
+  function applyFallbackQuiz(message) {
+    setRun(null);
+    setQuiz(fallbackPictureQuiz);
+    setFallbackUsed(true);
+    setNotice(message);
   }
 
   async function prepareActivity() {
@@ -174,6 +135,7 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
     }
     setLoadingActivity(true);
     setError("");
+    setNotice("");
     stopSpeech();
     try {
       const nextRun = await agentsApi.run("lower-primary-tutor", {
@@ -190,37 +152,58 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
         },
       });
       const quizArtifact = nextRun?.artifacts?.find((item) => item.mimeType === QUIZ_MIME);
-      if (!quizArtifact?.payload?.questions?.length) {
-        throw new Error("小智暂时没有准备好图片游戏，请稍后再试");
+      if (quizArtifact?.payload?.questions?.length) {
+        setRun(nextRun);
+        setQuiz(quizArtifact.payload);
+        setFallbackUsed(false);
+      } else {
+        applyFallbackQuiz("小智这次没准备好游戏，先用离线小游戏继续上课。");
       }
-      setRun(nextRun);
-      setQuiz(quizArtifact.payload);
       setStep("explain");
-    } catch (requestError) {
-      setError(requestError.message);
+    } catch {
+      applyFallbackQuiz("小智暂时没连上，先用离线小游戏继续上课。");
+      setStep("explain");
     } finally {
       setLoadingActivity(false);
     }
   }
 
   async function submitGame() {
-    if (!allAnswered || !run?.runId) return;
+    if (!allAnswered) return;
     setSubmitting(true);
     setError("");
     try {
-      const attempt = await practiceApi.submit({
-        runId: run.runId,
-        hintCount: Object.keys(hintedQuestions).length,
-        durationMs: gameStartedAtRef.current
-          ? Math.min(3600000, Math.max(0, Date.now() - gameStartedAtRef.current))
-          : 0,
-        answers: quiz.questions.map((question) => ({
-          questionId: question.id,
-          optionId: answers[question.id],
-        })),
-      });
+      let attempt;
+      if (quiz.local || !run?.runId) {
+        // 离线题目在本地判分，不依赖服务端
+        const totalQuestions = quiz.questions.length;
+        const correctCount = quiz.questions.filter((question) => answers[question.id] === question.answer).length;
+        attempt = {
+          local: true,
+          score: correctCount * 25,
+          maxScore: 100,
+          correctCount,
+          totalQuestions,
+          badgeName: correctCount === totalQuestions ? "图片分类小侦探" : "见习图片侦探",
+          newlyEarned: true,
+        };
+      } else {
+        attempt = await practiceApi.submit({
+          runId: run.runId,
+          hintCount: Object.keys(hintedQuestions).length,
+          durationMs: gameStartedAtRef.current
+            ? Math.min(3600000, Math.max(0, Date.now() - gameStartedAtRef.current))
+            : 0,
+          answers: quiz.questions.map((question) => ({
+            questionId: question.id,
+            optionId: answers[question.id],
+          })),
+        });
+      }
       const masteryList = await practiceApi.mastery().catch(() => []);
-      const currentMastery = masteryList.find((item) => item.knowledgeCode === CAT_KNOWLEDGE_CODE) || null;
+      const currentMastery = quiz.local || !run?.runId
+        ? null
+        : masteryList.find((item) => item.knowledgeCode === CAT_KNOWLEDGE_CODE) || null;
       const masteryHints = masteryList
         .filter((item) => item.knowledgeCode)
         .map((item) => ({ knowledgeCode: item.knowledgeCode, masteryPercent: item.masteryPercent }));
@@ -301,14 +284,15 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
   return (
     <LessonShell navigate={navigate} progress={progress}>
       {error && <p className="page-error cat-lesson-error" role="alert">{error}</p>}
+      {notice && <p className="cat-lesson-notice" role="status">{notice}</p>}
 
       {step === "intro" && (
         <section className="cat-lesson-intro">
           <div>
             <p className="eyebrow">AI 小侦探 · 8 分钟任务</p>
             <h1>AI 为什么能认出小猫</h1>
-            <p>今天完成三件事：听绘本、玩图片分类、发现 AI 也会猜错。</p>
-            <div className="cat-goal-list"><span>1 听故事</span><span>2 分图片</span><span>3 拿徽章</span></div>
+            <p>今天完成四件事：听绘本、排程序、玩图片分类、发现 AI 也会猜错。</p>
+            <div className="cat-goal-list"><span>1 听故事</span><span>2 排程序</span><span>3 分图片</span><span>4 拿徽章</span></div>
             <button className="button primary" type="button" onClick={() => setStep("book")}><BookOpen size={18} />开始读绘本</button>
           </div>
           <img src="/assets/experience/primary/student-reading.webp" alt="小学生和小智一起读绘本" />
@@ -344,20 +328,28 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
         </section>
       )}
 
-      {step === "explain" && run && (
+      {step === "explain" && (run || fallbackUsed) && (
         <section className="cat-explanation">
           <div className="cat-teacher-avatar"><img src="/assets/experience/primary/mascot-wave.webp" alt="小智" /></div>
           <div>
             <p className="eyebrow">小智的文字讲解</p>
             <h1>图片、标签和线索</h1>
-            <MarkdownContent className="cat-explanation-text">{run.outputText}</MarkdownContent>
+            <MarkdownContent className="cat-explanation-text">{run?.outputText || fallbackExplainText}</MarkdownContent>
             <div className="speech-controls">
-              <button className="button secondary" type="button" onClick={() => readAloud(run.outputText)}><Volume2 size={17} />百炼云语音朗读</button>
-              <button className="button primary" type="button" onClick={beginGame}>开始图片分类<ArrowRight size={17} /></button>
+              <button className="button secondary" type="button" onClick={() => readAloud(run?.outputText || fallbackExplainText)}><Volume2 size={17} />百炼云语音朗读</button>
+              <button className="button primary" type="button" onClick={() => { stopSpeech(); setStep("code"); }}>先给电脑排步骤<ArrowRight size={17} /></button>
             </div>
             {speechState && <p className="speech-status" role="status"><Headphones size={15} />{speechState}</p>}
           </div>
         </section>
+      )}
+
+      {step === "code" && (
+        <InstructionOrderGame
+          game={catCommandGame}
+          completeLabel="开始图片分类游戏"
+          onComplete={beginGame}
+        />
       )}
 
       {step === "game" && quiz && (
@@ -395,7 +387,7 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
             ))}
           </div>
           <button className="button primary cat-submit-game" type="button" disabled={!allAnswered || submitting} onClick={submitGame}>
-            {submitting ? <LoaderCircle size={17} /> : <CheckCircle2 size={17} />}{submitting ? "服务端正在判分…" : "提交给小智判分"}
+            {submitting ? <LoaderCircle size={17} /> : <CheckCircle2 size={17} />}{submitting ? "正在判分…" : "提交给小智判分"}
           </button>
         </section>
       )}
@@ -406,14 +398,18 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
           <div>
             <p className="eyebrow">学习记录已更新</p>
             <h1>{result.newlyEarned ? "新徽章到手！" : "这枚徽章已经属于你"}</h1>
-            <p>服务端判分：{result.score}/{result.maxScore} 分 · 答对 {result.correctCount}/{result.totalQuestions} 题</p>
+            <p>{result.local ? "离线判分" : "服务端判分"}：{result.score}/{result.maxScore} 分 · 答对 {result.correctCount}/{result.totalQuestions} 题</p>
             <div className="mastery-card"><span>图像分类掌握度</span><strong>{masteryPercent}%</strong><div><i style={{ width: `${masteryPercent}%` }} /></div></div>
             {recommendation && (
               <aside className="next-lesson-card"><small>推荐下一节</small><strong>{recommendation.title}</strong><p>{recommendation.reason}</p></aside>
             )}
             <div className="reward-actions">
               <button className="button secondary" type="button" onClick={restartGame}><RotateCcw size={17} />再玩一次</button>
-              <button className="button primary" type="button" onClick={() => onContinue?.(recommendation)}>{masteryPercent < 60 ? "跟小智再复习" : "学习下一节"}<ArrowRight size={17} /></button>
+              {masteryPercent < 60 ? (
+                <button className="button primary" type="button" onClick={() => onContinue?.(recommendation)}>跟小智再复习<ArrowRight size={17} /></button>
+              ) : (
+                <button className="button primary" type="button" onClick={() => navigate("find-cat-lesson")}>下一课：找到小猫在哪里<ArrowRight size={17} /></button>
+              )}
             </div>
           </div>
         </section>

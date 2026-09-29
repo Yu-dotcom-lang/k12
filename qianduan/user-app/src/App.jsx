@@ -7,6 +7,7 @@ import { SiteHeader } from "./components/SiteHeader.jsx";
 import { AiStudioPage } from "./pages/AiStudioPage.jsx";
 import { CodeLabPage } from "./pages/CodeLabPage.jsx";
 import { CatRecognitionLessonPage } from "./pages/CatRecognitionLessonPage.jsx";
+import { CatFindingLessonPage } from "./pages/CatFindingLessonPage.jsx";
 import { CourseDetailPage } from "./pages/CourseDetailPage.jsx";
 import { CoursesPage } from "./pages/CoursesPage.jsx";
 import { CoursewaresPage } from "./pages/CoursewaresPage.jsx";
@@ -35,7 +36,7 @@ import {
   validateRegisterForm,
 } from "./utils/passwordValidation.js";
 
-const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "coursewares"]);
+const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "find-cat-lesson", "coursewares"]);
 const VisualCodeLabPage = lazy(() => import("./pages/VisualCodeLabPage.jsx")
   .then((module) => ({ default: module.VisualCodeLabPage })));
 
@@ -400,6 +401,21 @@ export function App() {
             setAssistantDraft({
               prompt: `我刚完成了“AI 为什么能认出小猫”。请继续讲解「${nextTopic?.title || "图像中的物体"}」，先说明为什么推荐它，再给我一个适合小学低年级的小任务。`,
               topicId: topicIdForKnowledgeCode(nextTopic?.code) || "image-classification",
+              preferDeterministic: true,
+            });
+            navigate("ai-studio");
+          }}
+        />
+      ),
+      "find-cat-lesson": (
+        <CatFindingLessonPage
+          session={session}
+          requireLogin={requireLogin}
+          navigate={navigate}
+          onContinue={(nextTopic) => {
+            setAssistantDraft({
+              prompt: `我刚完成第二课「找到小猫在哪里」，学会了 AI 会用方框指出物体在哪里。请继续讲解「${nextTopic?.title || "目标检测"}」，先说明为什么推荐它，再给我一个适合小学低年级的小任务。`,
+              topicId: topicIdForKnowledgeCode(nextTopic?.code),
               preferDeterministic: true,
             });
             navigate("ai-studio");
