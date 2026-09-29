@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, LoaderCircle, MessageSquareText, TrendingUp } from "lucide-react";
+import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, FileText, LoaderCircle, MessageSquareText, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { coursesApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
@@ -215,17 +215,21 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
           </section>
           <section><BarChart3 /><div><small>最近批改</small><h2>{latestGraded ? `${latestGraded.score} 分` : "暂无已批改作业"}</h2><p>{latestGraded?.feedback || "完成并提交作业后，成绩和教师反馈会显示在这里。"}</p></div></section>
           <section className="result-list">
-            <div><small>提交记录</small><h2>最近作业结果</h2></div>
-            {results.slice(0, 5).map((item) => {
-              const tone = submissionTone(item.status);
-              return (
-                <p key={item.id}>
-                  <span>{item.homeworkTitle || "最近一次作业"}</span>
-                  <strong className={`task-status-badge tone-${tone}`}>{formatSubmissionStatus(item)}</strong>
-                </p>
-              );
-            })}
-            {!results.length && <p className="inline-empty">暂无作业提交记录。</p>}
+            <FileText />
+            <div>
+              <small>提交记录</small>
+              <h2>最近作业结果</h2>
+              {results.slice(0, 5).map((item) => {
+                const tone = submissionTone(item.status);
+                return (
+                  <p className="result-row" key={item.id}>
+                    <span>{item.homeworkTitle || "最近一次作业"}</span>
+                    <strong className={`task-status-badge tone-${tone}`}>{formatSubmissionStatus(item)}</strong>
+                  </p>
+                );
+              })}
+              {!results.length && <p className="inline-empty">暂无作业提交记录。</p>}
+            </div>
           </section>
         </aside>
       </div>

@@ -476,7 +476,7 @@ export function App() {
         learningProfile={learningProfile}
         onExperienceChange={changeExperience}
       />
-      {content}
+      <div className="route-view" key={`${experience}:${route.page}`}>{content}</div>
       <footer className="site-footer">
         <button className="brand brand-button" type="button" onClick={() => navigate("home")}>
           <span className="brand-mark"><img src={footerMascot} alt="" /></span><span>EduGraph AI</span>

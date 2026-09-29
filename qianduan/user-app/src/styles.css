@@ -1484,11 +1484,10 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 .settings-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px 18px; padding-top:8px; }
 .settings-password { background:#fafbfc; }
 .report-side .profile-card .text-button { justify-self:start; margin-top:8px; }
-.result-list { display:block!important; }
-.result-list > div { margin-bottom:12px; }
-.result-list > p { display:flex; justify-content:space-between; gap:12px; margin:0; padding:10px 0; border-top:1px solid var(--line); }
-.result-list > p strong { font-size:11px; }
-.result-list > p span { min-width:0; overflow-wrap:anywhere; }
+.result-list > div { min-width:0; }
+.result-list .result-row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0; padding:10px 0; border-top:1px solid var(--line); }
+.result-list .result-row strong { flex-shrink:0; font-size:11px; }
+.result-list .result-row span { min-width:0; overflow-wrap:anywhere; }
 .practice-insight-panel > div { min-width: 0; }
 .practice-insight-panel article { padding: 12px 0; border-top: 1px solid var(--line); }
 .practice-insight-panel article strong { display: block; font-size: 12px; overflow-wrap: anywhere; }
@@ -3306,7 +3305,7 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 .report-page .report-side > section:nth-child(4) { border-left-color:#d979a0; }
 .report-page .practice-insight-panel article strong { font-size:14px; }
 .report-page .practice-insight-panel article > span,
-.report-page .result-list > p span { font-size:12px; }
+.report-page .result-list .result-row span { font-size:12px; }
 .report-page .practice-insight-panel article .button { font-size:13px; }
 
 @media (max-width:980px) {
@@ -5391,3 +5390,69 @@ body:has(main.experience-teen)::after {
 .report-page .auth-gate,
 .leaderboard-page .auth-gate { min-height: 480px; align-content: center; }
 .courseware-shelf-note { margin-top: 18px; }
+
+/* ==================== 全站过渡与切换动画 ==================== */
+@keyframes route-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes nav-drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* 路由/端切换：整页淡入上移（backwards 填充，结束后不锁 transform，hover 不受影响） */
+.route-view { animation: route-in .4s cubic-bezier(.22,.61,.36,1) backwards; }
+
+/* 卡片交错浮现：统计条/侧栏面板/登录门特性卡/课程与课件卡片/任务空态特性卡 */
+.report-stats > article,
+.report-panel,
+.report-side > section,
+.auth-gate-features > article,
+.course-grid > article,
+.courseware-grid > article,
+.tasks-empty-features > article { animation: rise-in .5s cubic-bezier(.22,.61,.36,1) backwards; }
+:is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > :nth-child(2) { animation-delay: .06s; }
+:is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > :nth-child(3) { animation-delay: .12s; }
+:is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > :nth-child(4) { animation-delay: .18s; }
+:is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > :nth-child(5) { animation-delay: .24s; }
+:is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > :nth-child(n+6) { animation-delay: .3s; }
+
+/* 首页热门问题胶囊依次弹出 */
+.hero-question-row .hero-question-chip { animation: rise-in .45s cubic-bezier(.22,.61,.36,1) backwards; }
+.hero-question-row .hero-question-chip:nth-child(2) { animation-delay: .14s; }
+.hero-question-row .hero-question-chip:nth-child(3) { animation-delay: .19s; }
+.hero-question-row .hero-question-chip:nth-child(4) { animation-delay: .24s; }
+.hero-question-row .hero-question-chip:nth-child(5) { animation-delay: .29s; }
+
+/* 可点卡片 hover 轻浮起 */
+.course-grid > article,
+.courseware-grid > article { transition: transform .22s ease, box-shadow .22s ease; }
+.course-grid > article:hover,
+.courseware-grid > article:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(34,66,88,.12); }
+
+/* 按钮与图标按钮全局平滑过渡 + 按压反馈 */
+.button,
+.icon-button,
+.text-button,
+.site-header nav button,
+.experience-switcher button,
+.site-header .header-login,
+.site-header .header-register { transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.button:active,
+.icon-button:active { transform: scale(.97); }
+
+/* 弹窗：遮罩淡入 + 面板缩放浮入 */
+.dialog-backdrop { animation: fade-in .22s ease backwards; }
+.dialog-backdrop > * { animation: pop-in .3s cubic-bezier(.22,.61,.36,1) backwards; }
+
+/* 移动端导航胶囊行展开下滑 */
+@media (max-width: 700px) {
+  .site-header nav.open { animation: nav-drop .25s ease backwards; }
+}
+
+/* 用户偏好减弱动态效果时全部关闭 */
+@media (prefers-reduced-motion: reduce) {
+  .route-view,
+  .dialog-backdrop,
+  .dialog-backdrop > *,
+  .hero-question-row .hero-question-chip,
+  :is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > * { animation: none; }
+}
