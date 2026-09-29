@@ -5,7 +5,7 @@ import { pictureBooksApi } from "../api/client.js";
 import { fallbackPictureBooks, normalizePictureBook } from "../data/pictureBookFallback.js";
 import { EXPERIENCE } from "../experience/experience.js";
 
-export function PictureBooksPage({ session, requireLogin, navigate }) {
+export function PictureBooksPage({ session, requireLogin, navigate, experience = EXPERIENCE.PRIMARY }) {
   const [books, setBooks] = useState(fallbackPictureBooks);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export function PictureBooksPage({ session, requireLogin, navigate }) {
   return (
     <div className="page inner-page picture-books-page">
       <ExperiencePageHeader
-        experience={EXPERIENCE.PRIMARY}
+        experience={experience}
         eyebrow="小智互动绘本"
         title="把 AI 知识装进故事里"
         description="每本绘本都有语音朗读、图文讲解和一个可以动手完成的小挑战。"

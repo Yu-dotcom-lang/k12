@@ -168,6 +168,18 @@ export const practiceApi = {
   mastery: () => api("/api/v1/assessments/practice-attempts/me/mastery"),
 };
 
+/** 学习证据：练习、诊断、教学对话等服务端确认的学习活动流水。 */
+export const evidenceApi = {
+  mine: (limit = 30) => api(`/api/v1/assessments/evidence/me?${query({ limit })}`),
+};
+
+/** 首次学情诊断：服务端题库与判分，生成初始学习画像。 */
+export const diagnosticsApi = {
+  paper: (stage) => api(`/api/v1/assessments/diagnostics/paper?stage=${encodeURIComponent(stage)}`),
+  submit: (body) => api("/api/v1/assessments/diagnostics", { method: "POST", body: JSON.stringify(body) }),
+  latest: () => api("/api/v1/assessments/diagnostics/me"),
+};
+
 export const knowledgeGraphApi = {
   overview: async ({ force = false } = {}) => {
     if (!force) {

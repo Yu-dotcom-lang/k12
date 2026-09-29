@@ -1,6 +1,6 @@
-import { ArrowRight, BarChart3, BookOpen, ChevronLeft, ChevronRight, ClipboardCheck, Eye, FlaskConical, Gamepad2, LoaderCircle, MessageCircle, Play, Send, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpen, ChevronLeft, ChevronRight, ClipboardCheck, Eye, FlaskConical, Gamepad2, LoaderCircle, MessageCircle, Play, Send, Sparkles, Target } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { coursesApi } from "../api/client.js";
+import { coursesApi, diagnosticsApi } from "../api/client.js";
 import { DailyLearningPlan } from "../components/DailyLearningPlan.jsx";
 import { LearningRhythm } from "../components/LearningRhythm.jsx";
 import { courses as fallbackCourses } from "../data/learningData.js";
@@ -199,6 +199,7 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         </section>
       )}
 
+      <DiagnosticNudge session={session} navigate={navigate} primary={primary} />
       <DailyLearningPlan session={session} navigate={navigate} onAskTopic={onAskTopic} experience={experience} />
 
       {session && <LearningRhythm session={session} navigate={navigate} experience={experience} className="home-learning-rhythm" />}
@@ -249,5 +250,35 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         </>
       )}
     </div>
+  );
+}
+
+/** 未做首次诊断时首页温和提醒；接口异常时视为已完成，避免打扰。 */
+function DiagnosticNudge({ session, navigate, primary }) {
+  const [done, setDone] = useState(null);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    let active = true;
+    diagnosticsApi.latest()
+      .then((value) => { if (active) setDone(Boolean(value)); })
+      .catch(() => { if (active) setDone(true); });
+    return () => { active = false; };
+  }, [session]);
+
+  if (!session || done !== false) return null;
+  return (
+    <section className="diagnostic-nudge">
+      <span className="diagnostic-nudge-icon"><Target size={20} /></span>
+      <div>
+        <strong>{primary ? "让小智先认识你一下" : "还没有学习画像"}</strong>
+        <p>{primary
+          ? "花 2 分钟做个小诊断，小智就能帮你挑最合适的课程和题目。"
+          : "完成首次学情诊断，生成专属画像：优势、薄弱点与推荐起点。"}</p>
+      </div>
+      <button className="button primary" type="button" onClick={() => navigate("diagnostic")}>
+        开始诊断<ArrowRight size={15} />
+      </button>
+    </section>
   );
 }

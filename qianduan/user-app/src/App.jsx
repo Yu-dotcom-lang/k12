@@ -14,6 +14,7 @@ import { CoursewaresPage } from "./pages/CoursewaresPage.jsx";
 import { HomePage } from "./pages/HomePage.jsx";
 import { LeaderboardPage } from "./pages/LeaderboardPage.jsx";
 import { ProgressPage } from "./pages/ProgressPage.jsx";
+import { DiagnosticPage } from "./pages/DiagnosticPage.jsx";
 import { PictureBooksPage } from "./pages/PictureBooksPage.jsx";
 import { PictureBookReaderPage } from "./pages/PictureBookReaderPage.jsx";
 import { StudentHomeworkPage } from "./pages/StudentHomeworkPage.jsx";
@@ -36,7 +37,7 @@ import {
   validateRegisterForm,
 } from "./utils/passwordValidation.js";
 
-const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "find-cat-lesson", "coursewares"]);
+const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "find-cat-lesson", "coursewares", "diagnostic"]);
 const VisualCodeLabPage = lazy(() => import("./pages/VisualCodeLabPage.jsx")
   .then((module) => ({ default: module.VisualCodeLabPage })));
 
@@ -367,6 +368,7 @@ export function App() {
         requireLogin={requireLogin}
         navigate={navigate}
         homeworkId={route.homeworkId}
+        experience={experience}
       />
     );
   } else {
@@ -390,7 +392,7 @@ export function App() {
         experience={experience}
         schoolStage={learningProfile?.schoolStage}
       />,
-      "picture-books": <PictureBooksPage session={session} requireLogin={requireLogin} navigate={navigate} />,
+      "picture-books": <PictureBooksPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
       coursewares: <CoursewaresPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
       "cat-lesson": (
         <CatRecognitionLessonPage
@@ -444,6 +446,15 @@ export function App() {
       ),
       "code-lab": <CodeLabPage session={session} requireLogin={requireLogin} experience={experience} />,
       leaderboard: <LeaderboardPage session={session} requireLogin={requireLogin} experience={experience} />,
+      diagnostic: (
+        <DiagnosticPage
+          session={session}
+          requireLogin={requireLogin}
+          navigate={navigate}
+          experience={experience}
+          schoolStage={learningProfile?.schoolStage}
+        />
+      ),
       progress: (
         <ProgressPage
           session={session}

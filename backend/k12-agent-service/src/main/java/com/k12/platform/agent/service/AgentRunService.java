@@ -67,6 +67,7 @@ public class AgentRunService {
     private final LearnerContextEnricher learnerContextEnricher;
     private final AgentSessionService sessionService;
     private final IamAccountBehaviorClient accountBehaviorClient;
+    private final AgentEvidenceWritebackService evidenceWritebackService;
 
     public AgentRunService(
             AgentMapper agentMapper,
@@ -79,7 +80,8 @@ public class AgentRunService {
             ObjectMapper objectMapper,
             LearnerContextEnricher learnerContextEnricher,
             AgentSessionService sessionService,
-            IamAccountBehaviorClient accountBehaviorClient
+            IamAccountBehaviorClient accountBehaviorClient,
+            AgentEvidenceWritebackService evidenceWritebackService
     ) {
         this.agentMapper = agentMapper;
         this.runMapper = runMapper;
@@ -92,6 +94,7 @@ public class AgentRunService {
         this.learnerContextEnricher = learnerContextEnricher;
         this.sessionService = sessionService;
         this.accountBehaviorClient = accountBehaviorClient;
+        this.evidenceWritebackService = evidenceWritebackService;
     }
 
     /**
@@ -172,6 +175,8 @@ public class AgentRunService {
             applyOffTopicPenaltyIfNeeded(run);
         }
         persistenceService.save(run, artifacts);
+        // 教学响应已持久化成功后尽力写回学习证据；失败只记日志。
+        evidenceWritebackService.recordTutorChat(run, context);
 
         return toResponse(run, artifacts);
     }

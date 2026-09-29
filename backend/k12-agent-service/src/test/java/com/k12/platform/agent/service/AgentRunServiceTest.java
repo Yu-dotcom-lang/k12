@@ -71,6 +71,8 @@ class AgentRunServiceTest {
     private AgentSessionService sessionService;
     @Mock
     private IamAccountBehaviorClient accountBehaviorClient;
+    @Mock
+    private AgentEvidenceWritebackService evidenceWritebackService;
 
     private AgentRunService runService;
     private AgentRabbitProperties rabbitProperties;
@@ -89,7 +91,8 @@ class AgentRunServiceTest {
                 new ObjectMapper(),
                 learnerContextEnricher,
                 sessionService,
-                accountBehaviorClient
+                accountBehaviorClient,
+                evidenceWritebackService
         );
         lenient().when(learnerContextEnricher.enrich(any(), any(), any(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(2));

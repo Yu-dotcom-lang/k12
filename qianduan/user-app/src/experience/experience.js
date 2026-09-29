@@ -28,6 +28,7 @@ export const experienceNavigation = Object.freeze({
     ["courses", "探索课程"],
     ["tasks", "趣味任务"],
     ["visual-code-lab", "图形编程"],
+    ["leaderboard", "成长排行"],
     ["progress", "我的成长"],
   ],
   [EXPERIENCE.TEEN]: [

@@ -1,6 +1,6 @@
-import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, FileText, LoaderCircle, MessageSquareText, TrendingUp } from "lucide-react";
+import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, FileText, LoaderCircle, MessageSquareText, Sparkles, Target, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { coursesApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
+import { coursesApi, diagnosticsApi, evidenceApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { LearnerKnowledgeNetwork } from "../components/LearnerKnowledgeNetwork.jsx";
@@ -8,6 +8,11 @@ import { LearningRhythm } from "../components/LearningRhythm.jsx";
 import { courseMatchesLearningScope, EXPERIENCE, learningProfileLabel } from "../experience/experience.js";
 
 const stages = [["PRIMARY_LOWER", "小学低年级"], ["PRIMARY_UPPER", "小学高年级"], ["JUNIOR_HIGH", "初中"], ["SENIOR_HIGH", "高中"]];
+const EVIDENCE_META = {
+  PRACTICE_QUIZ: { label: "AI 小测", tone: "practice", icon: ClipboardCheck },
+  TUTOR_CHAT: { label: "教学对话", tone: "tutor", icon: MessageSquareText },
+  DIAGNOSTIC: { label: "学情诊断", tone: "diagnostic", icon: Target },
+};
 function ProgressHeader({ experience }) {
   const primary = experience === EXPERIENCE.PRIMARY;
   return (
@@ -29,6 +34,8 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
   const [results, setResults] = useState([]);
   const [practiceInsights, setPracticeInsights] = useState([]);
   const [knowledgeMastery, setKnowledgeMastery] = useState([]);
+  const [evidence, setEvidence] = useState([]);
+  const [diagnostic, setDiagnostic] = useState(null);
   const [loading, setLoading] = useState(Boolean(session));
   const [error, setError] = useState("");
 
@@ -40,6 +47,8 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
       setResults([]);
       setPracticeInsights([]);
       setKnowledgeMastery([]);
+      setEvidence([]);
+      setDiagnostic(null);
       setLoading(false);
       return () => { active = false; };
     }
@@ -52,8 +61,10 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
       homeworksApi.learningResults(1, 10),
       practiceApi.insights(),
       practiceApi.mastery(),
+      evidenceApi.mine(20),
+      diagnosticsApi.latest(),
     ])
-      .then(([profileResult, historyResult, homeworkResult, practiceResult, masteryResult]) => {
+      .then(([profileResult, historyResult, homeworkResult, practiceResult, masteryResult, evidenceResult, diagnosticResult]) => {
         if (!active) return;
         const failedSources = [];
         const profileValue = profileResult.status === "fulfilled" ? profileResult.value : activeLearningProfile;
@@ -96,6 +107,19 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
         } else {
           setKnowledgeMastery([]);
           failedSources.push("知识点掌握情况");
+        }
+
+        if (evidenceResult.status === "fulfilled") {
+          setEvidence(Array.isArray(evidenceResult.value) ? evidenceResult.value : []);
+        } else {
+          setEvidence([]);
+          failedSources.push("学习证据");
+        }
+
+        if (diagnosticResult.status === "fulfilled") {
+          setDiagnostic(diagnosticResult.value || null);
+        } else {
+          setDiagnostic(null);
         }
 
         if (failedSources.length) setError(`${failedSources.join("、")}暂时无法读取，已展示其余可用数据。`);
@@ -182,6 +206,31 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
           </div>
         </section>
         <aside className="report-side">
+          {diagnostic ? (
+            <section className="profile-card diagnostic-summary-card">
+              <Target />
+              <div>
+                <small>学情画像 · {formatDate(diagnostic.createdTime)}诊断</small>
+                <h2>总体掌握 {diagnostic.scorePercent}%</h2>
+                <p>{diagnosticSummary(diagnostic)}</p>
+                <div className="diagnostic-summary-actions">
+                  <button className="text-button" type="button" onClick={() => navigate("diagnostic")}>查看完整画像 / 重新诊断</button>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className="profile-card diagnostic-summary-card diagnostic-summary-empty">
+              <Target />
+              <div>
+                <small>学情画像</small>
+                <h2>还没有诊断记录</h2>
+                <p>花 2 分钟完成首次诊断，生成优势、薄弱点与推荐起点。</p>
+                <div className="diagnostic-summary-actions">
+                  <button className="text-button" type="button" onClick={() => navigate("diagnostic")}>去诊断</button>
+                </div>
+              </div>
+            </section>
+          )}
           <section className="profile-card">
             <BookOpen />
             <div>
@@ -204,13 +253,38 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
                 const mastery = knowledgeMastery.find((item) => item.topic === insight.topic);
                 return <article key={insight.topic}>
                   <strong>{insight.topic}</strong>
-                  <span>最近 {insight.sampleCount} 次 · 平均 {insight.averageScorePercent}%{mastery ? ` · 累计 ${mastery.attemptCount} 次 / ${mastery.masteryPercent}%` : ""}</span>
+                  <span>最近 {insight.sampleCount} 次 · 平均 {insight.averageScorePercent}%{mastery ? ` · 累计 ${mastery.attemptCount} 次 / ${mastery.masteryPercent}%${mastery.evidenceCount ? ` · 证据 ${mastery.evidenceCount} 条` : ""}` : ""}</span>
                   {mastery && <div className="progress-track" role="progressbar" aria-label={`${insight.topic}练习掌握参考`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={mastery.masteryPercent}><span style={{ width: `${Math.min(100, Math.max(0, mastery.masteryPercent))}%` }} /></div>}
                   <p>{insight.suggestion}</p>
                   <button className="button secondary" type="button" onClick={() => onPractice(insight.topic)}><MessageSquareText size={14} />继续练习</button>
                 </article>;
               }) : <p>完成 AI 助教小测后，这里会根据近期练习给出建议。</p>}
               <p className="practice-insight-note">仅反映形成性练习，不是正式成绩或能力评定。</p>
+            </div>
+          </section>
+          <section className="evidence-panel">
+            <ClipboardCheck />
+            <div>
+              <small>学习证据</small>
+              <h2>每一步都有记录</h2>
+              {evidence.length ? (
+                <div className="evidence-timeline">
+                  {evidence.slice(0, 8).map((item) => {
+                    const meta = EVIDENCE_META[item.evidenceType] || EVIDENCE_META.TUTOR_CHAT;
+                    const Icon = meta.icon;
+                    return (
+                      <article className="evidence-row" key={item.id}>
+                        <span className={`evidence-icon tone-${meta.tone}`}><Icon size={15} /></span>
+                        <div>
+                          <strong>{item.title}</strong>
+                          <small>{meta.label}{item.scorePercent != null ? ` · ${item.scorePercent}%` : " · 参与讨论"} · {formatDate(item.createdTime)}</small>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : <p className="inline-empty">完成小测、向小智提问或参加首次诊断后，学习证据会显示在这里。</p>}
+              <p className="practice-insight-note">证据来自服务端确认的学习活动，仅用于画像与推荐。</p>
             </div>
           </section>
           <section><BarChart3 /><div><small>最近批改</small><h2>{latestGraded ? `${latestGraded.score} 分` : "暂无已批改作业"}</h2><p>{latestGraded?.feedback || "完成并提交作业后，成绩和教师反馈会显示在这里。"}</p></div></section>
@@ -242,6 +316,14 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "时间未知";
   return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }).format(date);
+}
+
+function diagnosticSummary(diagnostic) {
+  const strengths = diagnostic.strengths?.length ? `优势：${diagnostic.strengths.join("、")}` : "";
+  const weaknesses = diagnostic.weaknesses?.length
+    ? `建议加强：${diagnostic.weaknesses.map((item) => item.categoryTitle).join("、")}`
+    : "各类别掌握良好";
+  return [strengths, weaknesses].filter(Boolean).join("；");
 }
 
 function formatSubmissionStatus(item) {
