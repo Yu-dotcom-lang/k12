@@ -3,6 +3,7 @@ import { Flame, LoaderCircle, RefreshCw, ShieldCheck, Target, UserRound } from "
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { leaderboardApi } from "../api/client.js";
 import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
+import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { EXPERIENCE } from "../experience/experience.js";
 import { visualsFor } from "../experience/visualAssets.js";
 
@@ -57,12 +58,11 @@ export function LeaderboardPage({ session, requireLogin, experience = EXPERIENCE
 
   return (
     <div className="page inner-page leaderboard-page">
-      <header className="page-title page-title-row leaderboard-title-row">
-        <LeaderboardHero experience={experience} />
+      <LeaderboardHero experience={experience}>
         <button className="button secondary" type="button" onClick={loadLeaderboard} disabled={loading}>
           <RefreshCw size={16} />刷新
         </button>
-      </header>
+      </LeaderboardHero>
 
       {error && <p className="page-error" role="alert">{error}</p>}
       {loading && <div className="loading-state"><LoaderCircle size={22} />正在读取排行榜</div>}
@@ -111,18 +111,17 @@ function rankVisual(rank) {
   return <span>{rank}</span>;
 }
 
-function LeaderboardHero({ experience }) {
+function LeaderboardHero({ experience, children }) {
   const primary = experience === EXPERIENCE.PRIMARY;
   return (
-    <div className="leaderboard-hero">
-      <div className="leaderboard-mascot" aria-hidden="true">
-        <img src={visualsFor(experience).progress} alt="" />
-      </div>
-      <div className="leaderboard-hero-copy">
-        <p className="eyebrow">{primary ? "成长排行" : "学习排行"}</p>
-        <h1>{primary ? "每一次坚持都值得一颗星" : "用持续学习积累进步"}</h1>
-        <p>{primary ? "完成课程和挑战可以积累成长积分，和昨天的自己比一比。" : "积分来自已报名课程的章节最高进度，不代表考试成绩。"}</p>
-      </div>
-    </div>
+    <ExperiencePageHeader
+      experience={experience}
+      eyebrow={primary ? "成长排行" : "学习排行"}
+      title={primary ? "每一次坚持都值得一颗星" : "用持续学习积累进步"}
+      description={primary ? "完成课程和挑战可以积累成长积分，和昨天的自己比一比。" : "积分来自已报名课程的章节最高进度，不代表考试成绩。"}
+      imageKey="progress"
+    >
+      {children && <div className="leaderboard-hero-actions">{children}</div>}
+    </ExperiencePageHeader>
   );
 }

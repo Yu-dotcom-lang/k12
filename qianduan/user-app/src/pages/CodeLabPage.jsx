@@ -20,8 +20,10 @@ import {
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { agentsApi } from "../api/client.js";
 import { CodeCoachPanel } from "../components/CodeCoachPanel.jsx";
+import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { Modal } from "../components/Modal.jsx";
 import { parsePythonDiagnostics } from "../utils/pythonDiagnostics.js";
+import { EXPERIENCE } from "../experience/experience.js";
 
 const PythonCodeEditor = lazy(() => import("../components/PythonCodeEditor.jsx"));
 
@@ -285,9 +287,7 @@ const STATUS_LABELS = {
   CANCELLED: "已停止",
 };
 
-const CODE_LAB_DOODLE = "/assets/code-lab-laptop-doodle.png";
-
-export function CodeLabPage({ session, requireLogin }) {
+export function CodeLabPage({ session, requireLogin, experience = EXPERIENCE.TEEN }) {
   const [code, setCode] = useState(INITIAL_CODE);
   const [exampleId, setExampleId] = useState(CODE_EXAMPLES[0].id);
   const [practiceMode, setPracticeMode] = useState(false);
@@ -435,17 +435,15 @@ export function CodeLabPage({ session, requireLogin }) {
 
   return (
     <div className="page inner-page code-lab-page">
-      <header className="page-title page-title-row">
-        <div className="page-title-copy">
-          <p className="eyebrow"><Code2 size={14} /> 编程实验</p>
-          <h1 className="page-title-with-doodle">
-            <span>运行 Python 代码</span>
-            <img className="page-title-doodle page-title-doodle-laptop" src={CODE_LAB_DOODLE} alt="" width={110} height={90} />
-          </h1>
-          <p>支持语法高亮与补全；可在本页直接获得写码与改错指导。</p>
-        </div>
+      <ExperiencePageHeader
+        experience={experience}
+        eyebrow="编程实验"
+        title="运行 Python 代码"
+        description="支持语法高亮与补全；可在本页直接获得写码与改错指导。"
+        imageKey="code"
+      >
         <div className="code-runtime-label"><span />Python 3</div>
-      </header>
+      </ExperiencePageHeader>
 
       {!session && (
         <section className="code-login-notice">
