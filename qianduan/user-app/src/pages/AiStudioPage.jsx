@@ -2,14 +2,21 @@ import { Bot, ChevronDown, Code2, ClipboardCheck, GraduationCap, PlayCircle, Spa
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TeachingAssistantChat } from "../components/TeachingAssistantChat.jsx";
 import { PrimaryLearningGuide } from "../components/PrimaryLearningGuide.jsx";
+import { WorkspacePanel } from "../components/WorkspacePanel.jsx";
+import { WorkspaceProfileBar } from "../components/WorkspaceProfileBar.jsx";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { topicsByCategory } from "../data/teachingTopics.js";
 import { primaryChatStarters } from "../data/primaryChatPictures.js";
+import { knowledgeGraphApi, practiceApi, profileApi } from "../api/client.js";
+import { buildLessonWhy } from "../utils/lessonWhy.js";
 import { EXPERIENCE } from "../experience/experience.js";
 
 const RAIL_MIN = 220;
 const RAIL_MAX = 440;
 const RAIL_DEFAULT = 280;
+const PANEL_MIN = 240;
+const PANEL_MAX = 380;
+const PANEL_DEFAULT = 300;
 // 中学端首屏热门问题：让 hero 不再只有一行标题，点一下就能开始提问。
 // 小学端改用图画开场卡（primaryChatStarters），认字不多也能挑。
 const QUICK_QUESTIONS = [
@@ -33,9 +40,15 @@ export function AiStudioPage({
   const [openCategoryId, setOpenCategoryId] = useState(null);
   const [seedPrompt, setSeedPrompt] = useState(null);
   const [railWidth, setRailWidth] = useState(RAIL_DEFAULT);
+  const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
+  const [lesson, setLesson] = useState(null);
+  const [profileData, setProfileData] = useState({ ready: false, profile: null, mastery: [], insights: null, interests: [] });
+  const [gaps, setGaps] = useState([]);
   const dragging = useRef(false);
+  const dragTarget = useRef("rail");
   const layoutRef = useRef(null);
   const clearSeed = useCallback(() => setSeedPrompt(null), []);
+  const handleLessonState = useCallback((state) => setLesson(state), []);
   const primary = experience === EXPERIENCE.PRIMARY;
   const topicGroups = primary ? [] : topicsByCategory("teen");
 
@@ -46,6 +59,7 @@ export function AiStudioPage({
         prompt: draftRequest.prompt,
         preferDeterministic: Boolean(draftRequest.preferDeterministic),
         topicId: draftRequest.topicId,
+        topicCode: draftRequest.topicCode,
       });
       onDraftConsumed?.();
       return;
@@ -62,8 +76,13 @@ export function AiStudioPage({
   useEffect(() => {
     function onMove(event) {
       if (!dragging.current || !layoutRef.current) return;
-      const left = layoutRef.current.getBoundingClientRect().left;
-      const next = Math.min(RAIL_MAX, Math.max(RAIL_MIN, event.clientX - left));
+      const rect = layoutRef.current.getBoundingClientRect();
+      if (dragTarget.current === "panel") {
+        const next = Math.min(PANEL_MAX, Math.max(PANEL_MIN, rect.right - event.clientX));
+        setPanelWidth(next);
+        return;
+      }
+      const next = Math.min(RAIL_MAX, Math.max(RAIL_MIN, event.clientX - rect.left));
       setRailWidth(next);
     }
     function onUp() {
@@ -78,6 +97,60 @@ export function AiStudioPage({
       window.removeEventListener("mouseup", onUp);
     };
   }, []);
+
+  // 画像摘要取数：三个现成接口，谁失败就少显示谁（§4.1B 顶部画像摘要）。
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    Promise.allSettled([profileApi.getLearningProfile(), practiceApi.mastery(), practiceApi.insights()])
+      .then(([profileResult, masteryResult, insightsResult]) => {
+        if (!active) return;
+        setProfileData({
+          ready: true,
+          profile: profileResult.status === "fulfilled" ? profileResult.value : null,
+          mastery: masteryResult.status === "fulfilled" ? masteryResult.value || [] : [],
+          insights: insightsResult.status === "fulfilled" ? insightsResult.value : null,
+          interests: (profileResult.status === "fulfilled" ? profileResult.value?.interests : []) || [],
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
+
+  const focusTopicCode = lesson?.topicCode || null;
+  useEffect(() => {
+    if (!focusTopicCode || !profileData.mastery.length) {
+      setGaps([]);
+      return undefined;
+    }
+    let active = true;
+    const masteryPairs = profileData.mastery
+      .filter((item) => item?.knowledgeCode && Number.isFinite(item?.masteryPercent))
+      .map((item) => `${item.knowledgeCode}:${Math.round(item.masteryPercent)}`);
+    knowledgeGraphApi.prerequisiteGaps(focusTopicCode, masteryPairs)
+      .then((value) => {
+        if (active) setGaps(Array.isArray(value) ? value : []);
+      })
+      .catch(() => {
+        if (active) setGaps([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [focusTopicCode, profileData.mastery]);
+
+  const lessonWhy = buildLessonWhy({
+    topicTitle: lesson?.topicTitle || null,
+    mastery: profileData.mastery,
+    gaps,
+    interests: profileData.interests,
+  });
+  const fallbackNext = (profileData.insights?.weakPoints || profileData.mastery || [])
+    .filter((item) => Number.isFinite(item?.masteryPercent) ? item.masteryPercent < 70 : Boolean(item?.topic))
+    .slice(0, 4)
+    .map((item) => item.topic)
+    .filter(Boolean);
 
   function toggleCategory(categoryId) {
     setOpenCategoryId((current) => (current === categoryId ? null : categoryId));
@@ -128,10 +201,13 @@ export function AiStudioPage({
     });
   }
 
-  function startResize(event) {
-    event.preventDefault();
-    dragging.current = true;
-    document.body.classList.add("ai-studio-resizing");
+  function startResize(target) {
+    return (event) => {
+      event.preventDefault();
+      dragTarget.current = target;
+      dragging.current = true;
+      document.body.classList.add("ai-studio-resizing");
+    };
   }
 
   return (
@@ -165,10 +241,16 @@ export function AiStudioPage({
         </div>
       </ExperiencePageHeader>
 
+      <WorkspaceProfileBar
+        profileData={session ? profileData : null}
+        why={lessonWhy}
+        currentTopicTitle={lesson?.topicTitle || null}
+      />
+
       <div
         className="ai-studio-layout"
         ref={layoutRef}
-        style={{ gridTemplateColumns: `${railWidth}px 6px minmax(0, 1fr)` }}
+        style={{ "--studio-rail": `${railWidth}px`, "--studio-panel": `${panelWidth}px` }}
       >
         {primary ? (
           <div className="primary-ask-rail">
@@ -254,7 +336,7 @@ export function AiStudioPage({
           aria-valuemax={RAIL_MAX}
           aria-valuenow={railWidth}
           tabIndex={0}
-          onMouseDown={startResize}
+          onMouseDown={startResize("rail")}
           onKeyDown={(event) => {
             if (event.key === "ArrowLeft") {
               event.preventDefault();
@@ -306,10 +388,40 @@ export function AiStudioPage({
               onTopicChange={setActiveTopicId}
               seedPrompt={seedPrompt}
               onSeedConsumed={clearSeed}
+              onLessonState={handleLessonState}
               agentCode={primary ? "lower-primary-tutor" : "teaching-assistant"}
             />
           )}
         </div>
+
+        <div
+          className="ai-studio-resizer panel"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="拖动调节课堂面板宽度"
+          aria-valuemin={PANEL_MIN}
+          aria-valuemax={PANEL_MAX}
+          aria-valuenow={panelWidth}
+          tabIndex={0}
+          onMouseDown={startResize("panel")}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              setPanelWidth((value) => Math.min(PANEL_MAX, value + 16));
+            }
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              setPanelWidth((value) => Math.max(PANEL_MIN, value - 16));
+            }
+          }}
+        />
+
+        <WorkspacePanel
+          lesson={lesson}
+          why={lessonWhy}
+          fallbackNext={fallbackNext}
+          onAskTopic={primary ? askPrimaryTopic : askQuickQuestion}
+        />
       </div>
     </div>
   );

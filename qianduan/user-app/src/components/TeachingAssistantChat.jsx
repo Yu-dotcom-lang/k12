@@ -3,13 +3,14 @@ import {
   CheckCircle2,
   Code2,
   ExternalLink,
+  Lightbulb,
   LoaderCircle,
   MessageSquarePlus,
   Mic,
   Send,
   Square,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { agentsApi, practiceApi, profileApi, speechApi, teachingResourcesApi } from "../api/client.js";
 import { blobToBase64, createVoiceRecorder } from "../utils/voiceInput.js";
 import { BubbleSortAnimation } from "./BubbleSortAnimation.jsx";
@@ -29,6 +30,24 @@ const stageCodes = {
   JUNIOR_HIGH: "middle_school",
   SENIOR_HIGH: "high_school",
 };
+
+// 需求 §5.2：所有 AI 生成状态都要有阶段提示，不能只靠颜色/转圈。
+const PENDING_STAGES = [
+  { emoji: "🧠", label: "理解任务" },
+  { emoji: "🔎", label: "查找资料" },
+  { emoji: "🧩", label: "组织课堂" },
+  { emoji: "✨", label: "生成内容" },
+];
+// 各阶段切换的时间阈值（毫秒）：回答越久，说明进入越深的生成阶段。
+const PENDING_STAGE_MILLS = [0, 2500, 6000, 10000];
+
+function pendingStageIndex(elapsed) {
+  let index = 0;
+  PENDING_STAGE_MILLS.forEach((threshold, i) => {
+    if (elapsed >= threshold) index = i;
+  });
+  return index;
+}
 
 function greetingFor(agentCode) {
   return {
@@ -270,10 +289,35 @@ function MultimodalNextSteps({ animationArtifact, onOpenCodeLab }) {
   );
 }
 
+// 提示分级（需求 §4.2）：反问引导 → 思路提示 → 局部提示 → 直接答案。
+const HINT_LEVEL_EMOJI = ["", "🤔", "🧭", "🔍", "✅"];
+const HINT_LEVEL_NAMES = ["", "反问引导", "思路提示", "局部提示", "直接答案"];
+
+function buildHint(question, level) {
+  const correctIndex = question.options.findIndex((option) => option.id === question.correctOptionId);
+  const correctLetter = String.fromCharCode(65 + Math.max(correctIndex, 0));
+  if (level === 1) {
+    const focus = String(question.prompt || "").replace(/^[^，。？?]{0,4}/, "").slice(0, 24) || "这道题";
+    return `先想一想：${focus}……它到底在问什么？把画面在脑子里过一遍，再看选项。`;
+  }
+  if (level === 2) {
+    return question.hint || "换个生活例子想：哪个选项和你平时见到的情况对得上？想想每个选项和问题的关系。";
+  }
+  if (level === 3) {
+    // 局部提示：稳定地排除一个错误选项（取第一个非正确项），缩小选择范围。
+    const wrong = question.options.find((option) => option.id !== question.correctOptionId);
+    const wrongIndex = question.options.findIndex((option) => option.id === wrong?.id);
+    const wrongLetter = wrong ? String.fromCharCode(65 + wrongIndex) : "";
+    return `先排除一个：${wrongLetter ? `“${wrongLetter}”肯定不对，` : ""}再看看剩下的选项有什么不同。`;
+  }
+  return `答案是 ${correctLetter}。${question.explanation || "再读一遍解析，加深印象。"}`;
+}
+
 function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false }) {
   const payload = artifact?.payload;
   const questions = Array.isArray(payload?.questions) ? payload.questions : [];
   const [answers, setAnswers] = useState({});
+  const [hints, setHints] = useState({});
   const [recorded, setRecorded] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -281,6 +325,7 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false
   useEffect(() => {
     let active = true;
     setAnswers({});
+    setHints({});
     setRecorded(null);
     setError("");
     if (runId && artifact?.mimeType === "application/vnd.k12.quiz.v1+json") {
@@ -304,6 +349,15 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false
 
   const answeredCount = questions.filter((question) => answers[question.id]).length;
   const submitted = Boolean(recorded);
+  // 用过的提示总数随练习一起上送，作为学习证据的一部分（后端 hintCount 上限 20）。
+  const hintCount = Object.values(hints).reduce((sum, level) => sum + level, 0);
+
+  function requestHint(question) {
+    setHints((current) => ({
+      ...current,
+      [question.id]: Math.min(4, (current[question.id] || 0) + 1),
+    }));
+  }
 
   async function submitAnswers() {
     if (!runId || saving || answeredCount !== questions.length) return;
@@ -312,6 +366,7 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false
     try {
       const result = await practiceApi.submit({
         runId,
+        hintCount: Math.min(20, hintCount),
         answers: questions.map((question) => ({ questionId: question.id, optionId: answers[question.id] })),
       });
       setRecorded(result);
@@ -335,6 +390,7 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false
       {questions.map((question, questionIndex) => {
         const selected = answers[question.id];
         const correct = submitted && selected === question.correctOptionId;
+        const hintLevel = hints[question.id] || 0;
         return (
           <fieldset key={question.id} disabled={submitted} className={illustrated ? "illustrated" : ""}>
             <legend>{questionIndex + 1}. {question.prompt}</legend>
@@ -370,6 +426,27 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false
               </label>
               );
             })}
+            {!submitted && (
+              <div className="quiz-hint-block">
+                <button
+                  className="quiz-hint-button"
+                  type="button"
+                  disabled={hintLevel >= 4}
+                  onClick={() => requestHint(question)}
+                >
+                  <Lightbulb size={13} />
+                  {hintLevel ? "再要一个提示" : "要个提示"}
+                </button>
+                {hintLevel > 0 && (
+                  <p className="quiz-hint-text" data-level={hintLevel}>
+                    <span className="quiz-hint-badge">
+                      {HINT_LEVEL_EMOJI[hintLevel]} 第{hintLevel}级 · {HINT_LEVEL_NAMES[hintLevel]}
+                    </span>
+                    {buildHint(question, hintLevel)}
+                  </p>
+                )}
+              </div>
+            )}
             {submitted && selected && (
               <p className={correct ? "quiz-feedback correct" : "quiz-feedback"}>{question.explanation}</p>
             )}
@@ -469,6 +546,7 @@ export function TeachingAssistantChat({
   onTopicChange,
   seedPrompt,
   onSeedConsumed,
+  onLessonState,
   agentCode = "teaching-assistant",
 }) {
   const greeting = greetingFor(agentCode);
@@ -486,6 +564,7 @@ export function TeachingAssistantChat({
   const [micLevel, setMicLevel] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState("");
+  const [pendingElapsed, setPendingElapsed] = useState(0);
   const conversationRef = useRef(null);
   const proactiveSessionRef = useRef("");
   const voiceRecorderRef = useRef(null);
@@ -502,6 +581,17 @@ export function TeachingAssistantChat({
     if (!pane) return;
     pane.scrollTop = pane.scrollHeight;
   }, [conversation, sending, restoring]);
+
+  // 五阶段状态：回答期间按耗时推进（§5.2），回答结束回到「等待学生反馈」。
+  useEffect(() => {
+    if (!sending) {
+      setPendingElapsed(0);
+      return undefined;
+    }
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => setPendingElapsed(Date.now() - startedAt), 500);
+    return () => window.clearInterval(timer);
+  }, [sending]);
 
   useEffect(() => {
     if (session) return;
@@ -698,6 +788,9 @@ export function TeachingAssistantChat({
               animationArtifact,
               gameArtifact,
               coursewareArtifact,
+              topicTitle: metadata.topic || null,
+              nextTopics: metadata.knowledgeGraph?.nextTopics || [],
+              weakPoints: metadata.weakPoints || [],
               runId: turn.runId,
             },
           ];
@@ -783,6 +876,9 @@ export function TeachingAssistantChat({
         animationArtifact,
         gameArtifact,
         coursewareArtifact,
+        topicTitle: metadata.topic || null,
+        nextTopics: metadata.knowledgeGraph?.nextTopics || [],
+        weakPoints: metadata.weakPoints || [],
         runId: run.runId,
       }]);
       if (voiceAutoSpeakRef.current) {
@@ -791,7 +887,8 @@ export function TeachingAssistantChat({
       }
     } catch (requestError) {
       setError(requestError.message);
-      setConversation((current) => [...current, { role: "assistant", text: "暂时无法连接 AI 服务，请稍后重试。" }]);
+      // 失败也要给可执行的替代动作（§5.2），不留死胡同。
+      setConversation((current) => [...current, { role: "assistant", text: "这次没有连上 AI 服务。点输入框上方的重试提示再试一次，或者换个问法问我。" }]);
     } finally {
       setSending(false);
     }
@@ -837,17 +934,74 @@ export function TeachingAssistantChat({
     window.dispatchEvent(new CustomEvent("k12-open-codelab", { detail: { exampleId } }));
   }
 
-  const statusLabel = restoring ? "恢复会话中" : sending ? "思考中" : "在线";
   const statusBusy = restoring || sending;
   const hasConversationMemory = conversation.some(
     (message) => message.role === "assistant" && message.runId,
   ) || conversation.filter((message) => message.role === "user").length > 1;
+  const activeStage = PENDING_STAGES[pendingStageIndex(pendingElapsed)];
+  // 第五阶段：回答结束后就停在「等待学生反馈」，右栏面板与头部状态共用。
+  const stageLabelText = restoring
+    ? "恢复会话"
+    : sending ? activeStage.label
+      : hasConversationMemory ? "等待学生反馈"
+        : "在线";
+  const statusLabel = stageLabelText;
   const pendingLabel = restoring
     ? "正在恢复当前对话记忆…"
-    : hasConversationMemory
-      ? "正在结合当前对话记忆思考…"
-      : "正在思考…";
+    : `${activeStage.emoji} 正在${activeStage.label}…`;
+
+  // 右栏「课堂面板」数据源：状态 + 本课任务 + 课堂产物 + 下一步。
+  const lessonState = useMemo(() => {
+    const artifacts = [];
+    let lastAssistant = null;
+    conversation.forEach((message, messageIndex) => {
+      if (message.role !== "assistant") return;
+      const messageKey = `chat-msg-${messageIndex}`;
+      if (message.gameArtifact) {
+        artifacts.push({
+          kind: "QUIZ",
+          title: message.gameArtifact.payload?.title || "课堂小测",
+          messageKey,
+        });
+      }
+      if (message.animationArtifact) {
+        artifacts.push({
+          kind: "ANIMATION",
+          title: message.animationArtifact.payload?.title || "动画演示",
+          messageKey,
+        });
+      }
+      if (message.coursewareArtifact) {
+        artifacts.push({
+          kind: "COURSEWARE",
+          title: message.coursewareArtifact.payload?.title || "互动课件",
+          messageKey,
+        });
+      }
+      if (message.runId) lastAssistant = message;
+    });
+    const guided = lastAssistant?.guidedTurn || null;
+    return {
+      busy: statusBusy,
+      stageLabel: stageLabelText,
+      topicCode: lastTopicCode,
+      topicTitle: lastAssistant?.topicTitle || null,
+      phase: guided?.phase || null,
+      progressCurrent: guided?.progressCurrent || null,
+      progressTotal: guided?.progressTotal || null,
+      artifacts,
+      nextTopics: lastAssistant?.nextTopics || [],
+      weakPoints: lastAssistant?.weakPoints || [],
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 状态变化时重算并外发
+  }, [conversation, statusBusy, stageLabelText, lastTopicCode]);
+
+  useEffect(() => {
+    onLessonState?.(lessonState);
+  }, [lessonState, onLessonState]);
+
   const visibleConversation = conversation.slice(-30);
+  const messageOffset = conversation.length - visibleConversation.length;
   const lastAssistantIndex = visibleConversation.reduce(
     (latest, message, index) => (message.role === "assistant" ? index : latest),
     -1,
@@ -886,6 +1040,7 @@ export function TeachingAssistantChat({
           <div
             className={`message ${message.role} ${message.animationArtifact ? "has-animation" : ""}`}
             key={`${message.runId || "local"}-${message.role}-${index}`}
+            id={`chat-msg-${messageOffset + index}`}
           >
             <span>
               {message.role === "assistant"
@@ -949,6 +1104,15 @@ export function TeachingAssistantChat({
                   <i /><i /><i />
                 </span>
               </p>
+              {!restoring && (
+                <p className="pending-stages" aria-hidden="true">
+                  {PENDING_STAGES.map((stage, stageIndex) => (
+                    <span key={stage.label} className={stage === activeStage ? "current" : stageIndex < PENDING_STAGES.indexOf(activeStage) ? "done" : ""}>
+                      {stage.emoji} {stage.label}
+                    </span>
+                  ))}
+                </p>
+              )}
             </div>
           </div>
         )}

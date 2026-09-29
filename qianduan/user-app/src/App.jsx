@@ -437,7 +437,15 @@ export function App() {
           schoolStage={learningProfile?.schoolStage}
         />
       ),
-      courses: <CoursesPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} learningProfile={learningProfile} />,
+      courses: <CoursesPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} learningProfile={learningProfile}
+        onAskKnowledgePoint={(point) => {
+          setAssistantDraft({
+            prompt: `请讲解知识点「${point.title}」，用适合我学段的例子说明，并给我一道小练习。`,
+            topicCode: point.code,
+            preferDeterministic: true,
+          });
+          requireLogin(() => navigate("ai-studio"));
+        }} />,
       tasks: <TasksPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
       "visual-code-lab": (
         <Suspense fallback={<div className="page page-loading">正在准备图形化实验...</div>}>
