@@ -17,6 +17,7 @@ import { CoursewarePlayer, isCoursewareArtifact } from "./CoursewarePlayer.jsx";
 import { MarkdownContent } from "./MarkdownContent.jsx";
 import { TeachingSteps } from "./TeachingSteps.jsx";
 import { topicCodeForId } from "../data/teachingTopics.js";
+import { primaryPictureFor } from "../data/primaryChatPictures.js";
 
 export { TEACHING_TOPICS, TOPIC_CATEGORIES, topicsByCategory } from "../data/teachingTopics.js";
 
@@ -35,6 +36,10 @@ function greetingFor(agentCode) {
     text: agentCode === "lower-primary-tutor"
       ? "嗨，我是小智！我会一次陪你学一小步。准备好了吗？"
       : "你好，我是你的 AI 学习助教。可以从左侧选择主题，或直接输入问题开始学习。",
+    // 低年级先看图再认字：问候语也配一张小智的画。
+    picture: agentCode === "lower-primary-tutor"
+      ? { src: "/assets/experience/primary/mascot-wave.webp", alt: "小智在挥手", caption: "小智在这里陪你学" }
+      : null,
   };
 }
 
@@ -663,6 +668,10 @@ export function TeachingAssistantChat({
             {
               role: "assistant",
               text: turn.assistantMessage,
+              // 历史回复同样按话题码补图，刷新后不至于只剩文字。
+              picture: isLowerPrimary
+                ? primaryPictureFor({ text: turn.assistantMessage, topicCode: metadata.topicCode })
+                : null,
               grounding: metadata.knowledgeGrounding || null,
               courseRecommendations: metadata.courseRecommendations || [],
               guidedTurn: metadata.guidedConversation || null,
@@ -699,7 +708,7 @@ export function TeachingAssistantChat({
     onTopicChange?.(null);
   }
 
-  async function ask(text, { topicId, preferDeterministic = false, speakReply: shouldSpeak = false } = {}) {
+  async function ask(text, { topicId, topicCode, preferDeterministic = false, speakReply: shouldSpeak = false } = {}) {
     const content = text.trim();
     if (!content || restoring || sending) return;
     if (!session) {
@@ -713,6 +722,11 @@ export function TeachingAssistantChat({
     setError("");
     setConversation((current) => [...current, { role: "user", text: content }]);
     setSending(true);
+    const turnTopicCode = topicCodeForId(topicId) || topicCode || lastTopicCode || undefined;
+    // 低年级回答配插图：优先按话题码找绘本画，再按问题关键词猜。
+    const turnPicture = isLowerPrimary
+      ? primaryPictureFor({ text: content, topicCode: turnTopicCode })
+      : null;
     try {
       const run = await agentsApi.run(agentCode, {
         inputText: content,
@@ -725,7 +739,7 @@ export function TeachingAssistantChat({
           textbook: profile?.textbook || undefined,
           preferredInteraction: ["对话问答"],
           preferDeterministic: Boolean(preferDeterministic),
-          topicCode: topicCodeForId(topicId) || lastTopicCode || undefined,
+          topicCode: turnTopicCode,
         },
       });
       const metadata = run.outputMetadata || run.metadata || {};
@@ -742,6 +756,7 @@ export function TeachingAssistantChat({
       setConversation((current) => [...current, {
         role: "assistant",
         text: run.outputText || "讲解还在准备中，请稍后再问一次。",
+        picture: turnPicture,
         grounding: metadata.knowledgeGrounding || null,
         courseRecommendations: metadata.courseRecommendations || [],
         guidedTurn: metadata.guidedConversation || null,
@@ -764,9 +779,9 @@ export function TeachingAssistantChat({
 
   useEffect(() => {
     if (!seedPrompt?.prompt || restoring || sending) return;
-    const { prompt, topicId, preferDeterministic } = seedPrompt;
+    const { prompt, topicId, topicCode, preferDeterministic } = seedPrompt;
     onSeedConsumed?.();
-    ask(prompt, { topicId, preferDeterministic: Boolean(preferDeterministic) });
+    ask(prompt, { topicId, topicCode, preferDeterministic: Boolean(preferDeterministic) });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only fire when seed arrives
   }, [seedPrompt, restoring, sending]);
 
@@ -858,6 +873,12 @@ export function TeachingAssistantChat({
                 : displayName.slice(0, 1)}
             </span>
             <div className="message-content">
+              {message.role === "assistant" && isLowerPrimary && message.picture && (
+                <figure className="assistant-picture">
+                  <img src={message.picture.src} alt={message.picture.alt || "小智的插画"} loading="lazy" />
+                  <figcaption>{message.picture.caption || "小智画给你看"}</figcaption>
+                </figure>
+              )}
               {message.role === "assistant" ? (
                 <MarkdownContent className="assistant-md">{message.text}</MarkdownContent>
               ) : (

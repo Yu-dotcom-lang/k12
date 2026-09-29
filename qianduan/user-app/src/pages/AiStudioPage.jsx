@@ -4,16 +4,20 @@ import { TeachingAssistantChat } from "../components/TeachingAssistantChat.jsx";
 import { PrimaryLearningGuide } from "../components/PrimaryLearningGuide.jsx";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { topicsByCategory } from "../data/teachingTopics.js";
+import { primaryChatStarters } from "../data/primaryChatPictures.js";
 import { EXPERIENCE } from "../experience/experience.js";
 
 const RAIL_MIN = 220;
 const RAIL_MAX = 440;
 const RAIL_DEFAULT = 280;
-// 首屏热门问题：让 hero 不再只有一行标题，点一下就能开始提问。
-const QUICK_QUESTIONS = {
-  primary: ["AI 是怎么认出小猫的？", "为什么天空是蓝色的？", "给我讲个太空的故事", "什么是人工智能？"],
-  teen: ["什么是机器学习？", "推荐算法怎么懂我？", "大模型是怎么工作的？", "学 AI 需要什么基础？"],
-};
+// 中学端首屏热门问题：让 hero 不再只有一行标题，点一下就能开始提问。
+// 小学端改用图画开场卡（primaryChatStarters），认字不多也能挑。
+const QUICK_QUESTIONS = [
+  "什么是机器学习？",
+  "推荐算法怎么懂我？",
+  "大模型是怎么工作的？",
+  "学 AI 需要什么基础？",
+];
 export function AiStudioPage({
   session,
   displayName,
@@ -107,10 +111,19 @@ export function AiStudioPage({
   function askQuickQuestion(question) {
     requireLogin(() => {
       setSeedPrompt({
-        prompt: primary
-          ? `请用适合小学生的短句和生活例子讲讲：${question}`
-          : `请给我讲讲：${question}`,
+        prompt: `请给我讲讲：${question}`,
         preferDeterministic: false,
+      });
+    });
+  }
+
+  // 图画开场卡：孩子点图不点字；带上目录里的 topicCode，回答和证据都落在课程知识点上。
+  function askStarter(starter) {
+    requireLogin(() => {
+      setSeedPrompt({
+        prompt: starter.question,
+        topicCode: starter.topicCode,
+        preferDeterministic: true,
       });
     });
   }
@@ -130,14 +143,26 @@ export function AiStudioPage({
         description={primary ? "挑一个好奇的问题，小智会用故事、例子和小挑战陪你学会它。" : "选择左侧主题开始学习；右侧对话窗可随时提问、看讲解与小测。"}
         imageKey="assistant"
       >
-        <div className="hero-question-row" aria-label="热门问题，点击即可向小智提问">
-          <span className="hero-question-label"><Sparkles size={13} />{primary ? "试试问小智" : "大家都在问"}</span>
-          {QUICK_QUESTIONS[primary ? "primary" : "teen"].map((question) => (
-            <button key={question} type="button" className="hero-question-chip" onClick={() => askQuickQuestion(question)}>
-              {question}
-            </button>
-          ))}
-        </div>
+        {primary ? (
+          <div className="hero-starter-row" aria-label="挑一张喜欢的图画，点一下就开始和小智聊">
+            {primaryChatStarters.map((starter) => (
+              <button key={starter.id} type="button" className="primary-starter-card" onClick={() => askStarter(starter)}>
+                <img src={starter.image} alt="" loading="lazy" />
+                <strong>{starter.label}</strong>
+                <small>{starter.question}</small>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="hero-question-row" aria-label="热门问题，点击即可向小智提问">
+            <span className="hero-question-label"><Sparkles size={13} />大家都在问</span>
+            {QUICK_QUESTIONS.map((question) => (
+              <button key={question} type="button" className="hero-question-chip" onClick={() => askQuickQuestion(question)}>
+                {question}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="ai-studio-hero-actions">
           <button
             className="button secondary"
