@@ -2,9 +2,9 @@ import { Bot, ChevronDown, Code2, ClipboardCheck, GraduationCap, PlayCircle, Spa
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TeachingAssistantChat } from "../components/TeachingAssistantChat.jsx";
 import { PrimaryLearningGuide } from "../components/PrimaryLearningGuide.jsx";
+import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { topicsByCategory } from "../data/teachingTopics.js";
 import { EXPERIENCE } from "../experience/experience.js";
-import { visualsFor } from "../experience/visualAssets.js";
 
 const RAIL_MIN = 220;
 const RAIL_MAX = 440;
@@ -34,7 +34,6 @@ export function AiStudioPage({
   const clearSeed = useCallback(() => setSeedPrompt(null), []);
   const primary = experience === EXPERIENCE.PRIMARY;
   const topicGroups = primary ? [] : topicsByCategory("teen");
-  const visuals = visualsFor(experience);
 
   useEffect(() => {
     if (!draftRequest || !session) return;
@@ -124,32 +123,32 @@ export function AiStudioPage({
 
   return (
     <div className="page inner-page ai-studio-page">
-      <header className="ai-studio-hero">
-        <div className="ai-studio-hero-copy">
-          <p className="eyebrow"><Sparkles size={14} /> {primary ? "小智陪伴课堂" : "云端研究学院 · AI 学习台"}</p>
-          <h1 className="ai-studio-title">
-            <span>{primary ? "问问小智" : "AI 学习台"}</span>
-            <img className="ai-studio-title-doodle experience-title-sticker" src={visuals.ai} alt="" width={92} height={92} />
-          </h1>
-          <p>{primary ? "挑一个好奇的问题，小智会用故事、例子和小挑战陪你学会它。" : "选择左侧主题开始学习；右侧对话窗可随时提问、看讲解与小测。"}</p>
-          <div className="hero-question-row" aria-label="热门问题，点击即可向小智提问">
-            <span className="hero-question-label"><Sparkles size={13} />{primary ? "试试问小智" : "大家都在问"}</span>
-            {QUICK_QUESTIONS[primary ? "primary" : "teen"].map((question) => (
-              <button key={question} type="button" className="hero-question-chip" onClick={() => askQuickQuestion(question)}>
-                {question}
-              </button>
-            ))}
-          </div>
+      <ExperiencePageHeader
+        experience={experience}
+        eyebrow={primary ? "小智陪伴课堂" : "云端研究学院 · AI 学习台"}
+        title={primary ? "问问小智" : "AI 学习台"}
+        description={primary ? "挑一个好奇的问题，小智会用故事、例子和小挑战陪你学会它。" : "选择左侧主题开始学习；右侧对话窗可随时提问、看讲解与小测。"}
+        imageKey="assistant"
+      >
+        <div className="hero-question-row" aria-label="热门问题，点击即可向小智提问">
+          <span className="hero-question-label"><Sparkles size={13} />{primary ? "试试问小智" : "大家都在问"}</span>
+          {QUICK_QUESTIONS[primary ? "primary" : "teen"].map((question) => (
+            <button key={question} type="button" className="hero-question-chip" onClick={() => askQuickQuestion(question)}>
+              {question}
+            </button>
+          ))}
         </div>
-        <button
-          className="button secondary"
-          type="button"
-          onClick={() => requireLogin(() => navigate(primary ? "visual-code-lab" : "code-lab"))}
-        >
-          <Code2 size={16} />
-          {primary ? "去图形编程" : "打开编程实验"}
-        </button>
-      </header>
+        <div className="ai-studio-hero-actions">
+          <button
+            className="button secondary"
+            type="button"
+            onClick={() => requireLogin(() => navigate(primary ? "visual-code-lab" : "code-lab"))}
+          >
+            <Code2 size={16} />
+            {primary ? "去图形编程" : "打开编程实验"}
+          </button>
+        </div>
+      </ExperiencePageHeader>
 
       <div
         className="ai-studio-layout"

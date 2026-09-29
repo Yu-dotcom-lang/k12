@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { BookOpenCheck, ChevronRight, ClipboardCheck, Presentation, ShieldCheck, Sparkles } from "lucide-react";
 import { coursewareApi } from "../api/client.js";
 import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
+import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { COURSEWARE_MIME, CoursewarePlayer } from "../components/CoursewarePlayer.jsx";
+import { EXPERIENCE } from "../experience/experience.js";
 
 const STAGE_LABELS = {
   lower_primary: "小学低年级",
@@ -12,7 +14,8 @@ const STAGE_LABELS = {
 };
 
 /** 学生端已发布课件列表：点开即进入互动课件播放器。 */
-export function CoursewaresPage({ session, requireLogin }) {
+export function CoursewaresPage({ session, requireLogin, experience = EXPERIENCE.TEEN }) {
+  const primary = experience === EXPERIENCE.PRIMARY;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,11 +68,21 @@ export function CoursewaresPage({ session, requireLogin }) {
 
   return (
     <div className="page inner-page coursewares-page">
-      <header className="page-header">
-        <p className="eyebrow"><Sparkles size={14} /> 老师审核过的 AI 课件</p>
-        <h1>AI 课件</h1>
-        <p className="page-subtitle">点开课件，跟小智一页一页学，还能边学边答题。</p>
-      </header>
+      <ExperiencePageHeader
+        experience={experience}
+        eyebrow={primary ? "小智课件书架" : "老师审核过的 AI 课件"}
+        title="AI 课件"
+        description={primary
+          ? "点开课件，跟小智一页一页学，还能边学边答题。"
+          : "由老师用 AI 生成并审核发布的互动课件，边看边答，学完即测。"}
+        imageKey="courses"
+      >
+        <ul className="courseware-hero-points" aria-label="课件亮点">
+          <li><Presentation size={14} />翻页互动课堂</li>
+          <li><ClipboardCheck size={14} />随堂小题即练</li>
+          <li><ShieldCheck size={14} />老师审核后发布</li>
+        </ul>
+      </ExperiencePageHeader>
       {error && session && <p className="form-error" role="alert">{error}</p>}
       {error && !session && (
         <AuthGateShowcase

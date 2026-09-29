@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Award,
-  Blocks,
   CheckCircle2,
   ChevronRight,
   CloudOff,
@@ -24,8 +23,8 @@ import {
   normalizeMission,
 } from "../data/blocklyMissions.js";
 import { visualProgrammingApi } from "../api/client.js";
+import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { EXPERIENCE } from "../experience/experience.js";
-import { visualsFor } from "../experience/visualAssets.js";
 
 const EMPTY_STAGE = {
   robotPosition: 8,
@@ -201,30 +200,27 @@ export function VisualCodeLabPage({ session, requireLogin, navigate, experience 
   const completedCount = missions.filter((item) => labState.completed[item.id]).length;
   const earnedStars = missions.reduce((total, item) => total + Number(labState.completed[item.id]?.stars || 0), 0);
   const primary = experience === EXPERIENCE.PRIMARY;
-  const visuals = visualsFor(experience);
   const nextMission = missions.find((item) => item.order > mission.order && !labState.completed[item.id])
     || missions.find((item) => !labState.completed[item.id] && item.id !== mission.id);
 
   return (
     <div className="page inner-page visual-code-lab-page">
-      <section className="visual-lab-hero">
-        <div>
-          <p className="eyebrow"><Blocks size={15} /> {primary ? "小学高年级 · 图形化 AI 编程" : "AI 通识 · 可视化算法实验"}</p>
-          <h1>{primary ? "AI 积木实验室" : "可视化 AI 实验室"}</h1>
-          <p>{primary ? "拖动数据、判断和循环积木，帮助角色完成一关关 AI 任务。" : "通过可视化积木理解数据、判断与循环，再逐步过渡到真实代码。"}</p>
-          <div className="visual-lab-summary">
-            <span><CheckCircle2 size={15} />完成 {completedCount}/{missions.length} 关</span>
-            <span><Star size={15} />获得 {earnedStars}/{missions.length * 3} 颗星</span>
-            <span><CloudStateIcon state={syncState} />{syncLabel(syncState)}</span>
-            {missionSource === "builtin" && (
-              <span className="is-fallback"><CloudOff size={15} />使用内置课程</span>
-            )}
-          </div>
+      <ExperiencePageHeader
+        experience={experience}
+        eyebrow={primary ? "小学高年级 · 图形化 AI 编程" : "AI 通识 · 可视化算法实验"}
+        title={primary ? "AI 积木实验室" : "可视化 AI 实验室"}
+        description={primary ? "拖动数据、判断和循环积木，帮助角色完成一关关 AI 任务。" : "通过可视化积木理解数据、判断与循环，再逐步过渡到真实代码。"}
+        imageKey="code"
+      >
+        <div className="visual-lab-summary">
+          <span><CheckCircle2 size={15} />完成 {completedCount}/{missions.length} 关</span>
+          <span><Star size={15} />获得 {earnedStars}/{missions.length * 3} 颗星</span>
+          <span><CloudStateIcon state={syncState} />{syncLabel(syncState)}</span>
+          {missionSource === "builtin" && (
+            <span className="is-fallback"><CloudOff size={15} />使用内置课程</span>
+          )}
         </div>
-        <div className="visual-lab-hero-art" aria-hidden="true">
-          <img src={visuals.code} alt="" />
-        </div>
-      </section>
+      </ExperiencePageHeader>
 
       {!session && (
         <section className="visual-lab-login">

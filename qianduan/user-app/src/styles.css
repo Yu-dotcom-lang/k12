@@ -784,13 +784,7 @@ main { min-height: 100vh; overflow-x: hidden; }
 .teaching-chat.page-variant > footer { flex:none; }
 .teaching-chat > footer { padding:0 14px 12px; color:#98a2b3; text-align:center; font-size:9px; }
 .ai-studio-page { display:grid; gap:22px; }
-.ai-studio-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding-bottom:6px; }
-.ai-studio-hero-copy { display:flex; flex-direction:column; align-items:flex-start; min-width:0; }
-.ai-studio-hero-copy .eyebrow { margin-bottom:6px; }
-.ai-studio-hero h1 { margin:0 0 8px; font-size:30px; letter-spacing:-.03em; }
-.ai-studio-title { display:inline-flex; align-items:flex-end; gap:10px; }
-.ai-studio-title-doodle { display:block; width:72px; height:72px; object-fit:contain; flex:none; }
-.ai-studio-hero p { margin:0; max-width:54ch; color:var(--muted); font-size:13px; line-height:1.6; }
+.ai-studio-hero-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
 .page-title-with-doodle { display:inline-flex; align-items:flex-end; gap:14px; margin:0 0 10px; }
 .page-title-doodle { display:block; width:140px; height:90px; object-fit:contain; flex:none; }
 .page-title-doodle-face { width:96px; height:96px; }
@@ -1806,7 +1800,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   .ai-studio-layout { grid-template-columns: 1fr !important; gap: 14px; min-height: 0; }
   .ai-topic-rail { position: static; max-height: none; }
   .ai-studio-resizer { display: none; }
-  .ai-studio-hero { flex-direction: column; align-items: flex-start; }
   .ai-studio-main,.ai-studio-main .teaching-chat.page-variant { min-height: 0; }
   .teaching-chat.page-variant {
     height: min(560px, calc(100vh - 200px));
@@ -1921,15 +1914,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 
 /* 小学高年级图形化 AI 编程实验 */
 .visual-code-lab-page { max-width:1500px; }
-.visual-lab-hero {
-  display:grid; grid-template-columns:minmax(0,1fr) 300px; align-items:center; gap:44px;
-  min-height:270px; padding:42px 48px; overflow:hidden; border:1px solid #dce8ee; border-radius:8px;
-  background:#f8fcfe;
-}
-.visual-lab-hero h1 { margin:8px 0 12px; font-size:42px; letter-spacing:0; }
-.visual-lab-hero > div:first-child > p:not(.eyebrow) { max-width:680px; margin-bottom:20px; color:#52606d; font-size:15px; line-height:1.8; }
-.visual-lab-hero-art { display:grid; place-items:center; min-height:190px; }
-.visual-lab-hero-art img { width:min(280px,100%); max-height:220px; object-fit:contain; }
 .visual-lab-summary { display:flex; flex-wrap:wrap; gap:10px; }
 .visual-lab-summary span {
   display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:0 12px;
@@ -2367,9 +2351,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   .visual-hint-button { grid-column:1 / -1; max-width:none; justify-self:stretch; }
 }
 @media (max-width:760px) {
-  .visual-lab-hero { grid-template-columns:1fr; min-height:0; padding:28px 22px; }
-  .visual-lab-hero h1 { font-size:32px; }
-  .visual-lab-hero-art { display:none; }
   .visual-mission-rail { grid-template-columns:1fr; }
   .visual-mission-rail-item { border-right:0; border-bottom:1px solid var(--line); }
   .visual-mission-rail-item:last-child { border-bottom:0; }
@@ -2636,13 +2617,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   width:86px;
   height:86px;
 }
-.experience-primary .ai-studio-hero {
-  min-height:142px;
-  padding:18px 24px;
-  border:1px solid #cee7f0;
-  border-radius:8px;
-  background:#f2fbfe;
-}
 .experience-primary .ai-topic-rail,
 .experience-primary .teaching-chat {
   border-color:#cfe5ee;
@@ -2838,14 +2812,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   .picture-book-card > div { padding:24px; }
   .picture-book-card h3 { font-size:23px; }
 }
-.experience-primary .visual-lab-hero {
-  border-color:#c9e6f0;
-  background:#f2fbfe;
-}
-.visual-lab-hero-art img {
-  width:min(260px,100%);
-  max-height:230px;
-}
 .assistant-launcher {
   width:64px;
   height:64px;
@@ -2936,7 +2902,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   .experience-page-header-art { width:100px; height:104px; }
   .primary-adventure-strip > button { grid-template-columns:66px minmax(0,1fr) auto; }
   .primary-adventure-strip > button > img { width:62px; height:62px; }
-  .experience-primary .ai-studio-hero { padding:18px; }
   .course-activity-item { align-items:flex-start; flex-wrap:wrap; }
   .course-activity-item .button { width:100%; }
 }
@@ -3474,6 +3439,92 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   filter:drop-shadow(0 10px 14px rgba(33,92,116,.12));
 }
 
+/* 问问小智 / AI 课件 / AI 实验室：横幅并入 ExperiencePageHeader 后，用贴纸和
+   光斑补足留白，让三页顶部与课程、报告页保持同一套饱满的视觉语言。 */
+.ai-studio-page .experience-page-header,
+.coursewares-page .experience-page-header,
+.visual-code-lab-page .experience-page-header {
+  min-height:206px;
+}
+.ai-studio-page .experience-page-header-art,
+.coursewares-page .experience-page-header-art,
+.visual-code-lab-page .experience-page-header-art {
+  width:206px;
+  height:182px;
+}
+.ai-studio-page .experience-page-header::before,
+.coursewares-page .experience-page-header::before,
+.visual-code-lab-page .experience-page-header::before {
+  content:"";
+  position:absolute;
+  right:-34px;
+  top:-52px;
+  width:210px;
+  height:210px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(56,172,210,.16), transparent 68%);
+  pointer-events:none;
+}
+.experience-primary .ai-studio-page .experience-page-header::before,
+.experience-primary .coursewares-page .experience-page-header::before,
+.experience-primary .visual-code-lab-page .experience-page-header::before {
+  background:radial-gradient(circle, rgba(240,196,63,.2), transparent 68%);
+}
+.ai-studio-page .experience-page-header::after,
+.coursewares-page .experience-page-header::after,
+.visual-code-lab-page .experience-page-header::after {
+  content:"";
+  position:absolute;
+  right:158px;
+  bottom:-12px;
+  width:78px;
+  height:78px;
+  opacity:1;
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:var(--experience-encouragement-art) center / 74% no-repeat #fff;
+  box-shadow:0 10px 22px rgba(34,66,88,.14);
+  transform:rotate(-6deg);
+  pointer-events:none;
+}
+.experience-page-header-copy .hero-question-row,
+.experience-page-header-copy .ai-studio-hero-actions,
+.experience-page-header-copy .visual-lab-summary,
+.experience-page-header-copy .courseware-hero-points {
+  margin-top:16px;
+}
+.courseware-hero-points {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:16px 0 0;
+  padding:0;
+  list-style:none;
+}
+.courseware-hero-points li {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 13px;
+  color:#2b5a6b;
+  border:1px solid #cfe3ea;
+  border-radius:999px;
+  background:#fff;
+  font-size:12px;
+  font-weight:750;
+  animation:rise-in .45s cubic-bezier(.22,.61,.36,1) backwards;
+}
+.courseware-hero-points li svg { color:#38acd2; }
+.courseware-hero-points li:nth-child(2) { animation-delay:.14s; }
+.courseware-hero-points li:nth-child(3) { animation-delay:.19s; }
+.experience-primary .courseware-hero-points li { color:#1d6d85; border-color:#bfe0ea; }
+.experience-primary .visual-lab-summary span { color:#1d6d85; border-color:#bfe0ea; }
+@media (max-width:820px) {
+  .ai-studio-page .experience-page-header::after,
+  .coursewares-page .experience-page-header::after,
+  .visual-code-lab-page .experience-page-header::after { display:none; }
+}
+
 /* 小学课程：卡片颜色表达内容类型，而不是一整页使用同一种蓝色。 */
 .experience-primary .stage-scope-banner {
   border-color:#f1d778;
@@ -3532,13 +3583,10 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 .experience-primary .report-panel:nth-child(1) { border-top-color:#38acd2; }
 
 /* 小智课堂与绘本馆：保留工作台结构，用贴图和分区色增强低龄识别。 */
-.experience-primary .ai-studio-hero {
-  border:1px solid #cce7f0;
-  border-left:5px solid #38acd2;
-  background:#f5fcff;
+.experience-primary .ai-studio-page .experience-page-header {
+  border-left-color:#38acd2;
   box-shadow:0 9px 24px rgba(33,92,116,.06);
 }
-.experience-primary .ai-studio-title-doodle { width:104px; height:104px; }
 .experience-primary .primary-learning-guide {
   border-top:4px solid #f0c43f;
   box-shadow:0 9px 22px rgba(33,92,116,.065);
@@ -4850,7 +4898,7 @@ body:has(main.experience-primary) {
 /* ---- 小学端 AI 积木实验室：关卡主题配色 (2026-09-25) ---- */
 
 /* 英雄卡：糖果渐变 */
-.experience-primary .visual-code-lab-page .visual-lab-hero {
+.experience-primary .visual-code-lab-page .experience-page-header {
   border: 0;
   border-radius: 24px;
   background: linear-gradient(135deg, #e8f4ff 0%, #f2edff 52%, #fff2e9 100%);
@@ -5191,7 +5239,7 @@ body:has(main.experience-teen)::before {
 }
 
 /* -- 9. AI 实验室（积木关卡页）：研究学院色调的关卡英雄区 -- */
-.experience-teen .visual-lab-hero {
+.experience-teen .visual-code-lab-page .experience-page-header {
   border-color: rgba(34, 87, 106, .12);
   background: linear-gradient(135deg, #e8f3f1 0%, #f1f6f2 52%, #fbf5e8 100%);
 }
@@ -5454,5 +5502,6 @@ body:has(main.experience-teen)::after {
   .dialog-backdrop,
   .dialog-backdrop > *,
   .hero-question-row .hero-question-chip,
+  .courseware-hero-points li,
   :is(.report-stats, .auth-gate-features, .course-grid, .courseware-grid, .tasks-empty-features, .report-side) > * { animation: none; }
 }
