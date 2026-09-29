@@ -168,10 +168,10 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
               <div className="course-detail-copy">
                 <span>{course.subject} · {course.gradeLevel}{course.preview ? " · 示例课程" : ""}</span>
                 <h2>{course.title}</h2>
-                <p>{course.description || "课程暂未填写简介"}</p>
+                {(experience !== EXPERIENCE.PRIMARY) && <p>{course.description || "课程暂未填写简介"}</p>}
                 {progress && <div className="course-card-progress"><div><span style={{ width: `${Math.min(100, Math.max(0, Number(progress.progressPercent || 0)))}%` }} /></div><small>{progress.progressPercent}% · 已完成 {progress.completedChapters}/{progress.totalChapters} 章</small></div>}
                 <button className="button secondary" type="button" onClick={() => openCourse(course)}>
-                  <BookOpen size={17} />{session ? "进入课程" : "登录后报名"}<ArrowRight size={15} />
+                  <BookOpen size={17} />{session ? (experience === EXPERIENCE.PRIMARY ? "开始探险" : "进入课程") : "登录后报名"}<ArrowRight size={15} />
                 </button>
               </div>
             </article>;

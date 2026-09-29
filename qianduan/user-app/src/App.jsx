@@ -392,7 +392,7 @@ export function App() {
         experience={experience}
         schoolStage={learningProfile?.schoolStage}
       />,
-      "picture-books": <PictureBooksPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
+      "picture-books": <PictureBooksPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} learningProfile={learningProfile} />,
       coursewares: <CoursewaresPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
       "cat-lesson": (
         <CatRecognitionLessonPage

@@ -1,12 +1,17 @@
 import { ArrowRight, BookOpen, Headphones, Images, Sparkles } from "lucide-react";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { pictureBooksApi } from "../api/client.js";
-import { fallbackPictureBooks, normalizePictureBook } from "../data/pictureBookFallback.js";
+import { extraFallbackBooks, fallbackPictureBooks, normalizePictureBook } from "../data/pictureBookFallback.js";
 import { EXPERIENCE } from "../experience/experience.js";
 
-export function PictureBooksPage({ session, requireLogin, navigate, experience = EXPERIENCE.PRIMARY }) {
-  const [books, setBooks] = useState(fallbackPictureBooks);
+const BOOK_GROUPS = [
+  { stage: "PRIMARY_LOWER", title: "小学低年级 · 一起听故事", note: "字少图多，点小喇叭让小智读给你听", hint: "低年级" },
+  { stage: "PRIMARY_UPPER", title: "小学高年级 · 进阶绘本", note: "读完可以接着去挑战和实验", hint: "高年级" },
+];
+
+export function PictureBooksPage({ session, requireLogin, navigate, experience = EXPERIENCE.PRIMARY, learningProfile }) {
+  const [books, setBooks] = useState(() => [...fallbackPictureBooks, ...extraFallbackBooks]);
 
   useEffect(() => {
     let active = true;
@@ -17,6 +22,17 @@ export function PictureBooksPage({ session, requireLogin, navigate, experience =
       .catch(() => undefined);
     return () => { active = false; };
   }, []);
+
+  const stage = learningProfile?.schoolStage === "PRIMARY_UPPER" ? "PRIMARY_UPPER"
+    : learningProfile?.schoolStage === "PRIMARY_LOWER" ? "PRIMARY_LOWER"
+      : null;
+  const groups = useMemo(() => BOOK_GROUPS
+    .filter((group) => !stage || group.stage === stage)
+    .map((group) => ({
+      ...group,
+      books: books.filter((book) => (book.stageCode || book.stage_code) === group.stage),
+    }))
+    .filter((group) => group.books.length), [books, stage]);
 
   function openBook(book) {
     requireLogin(() => navigate(book.challengeType === "CAT_LESSON"
@@ -29,41 +45,45 @@ export function PictureBooksPage({ session, requireLogin, navigate, experience =
       <ExperiencePageHeader
         experience={experience}
         eyebrow="小智互动绘本"
-        title="把 AI 知识装进故事里"
-        description="每本绘本都有语音朗读、图文讲解和一个可以动手完成的小挑战。"
+        title="看图画，听故事，学 AI"
+        description="翻开绘本，让小智读给你听；读完还有一个小挑战等着你。"
         imageKey="reading"
       />
 
-      <section className="picture-book-library" aria-labelledby="picture-book-library-title">
-        <header>
-          <div>
-            <p className="eyebrow"><Sparkles size={14} /> 本周精选</p>
-            <h2 id="picture-book-library-title">选择今天的 AI 绘本</h2>
-          </div>
-          <span><BookOpen size={17} /> 适合小学低年级</span>
-        </header>
+      {groups.map((group) => (
+        <section className="picture-book-library" key={group.stage} aria-labelledby={`picture-book-title-${group.stage}`}>
+          <header>
+            <div>
+              <p className="eyebrow"><Sparkles size={14} /> {group.hint}</p>
+              <h2 id={`picture-book-title-${group.stage}`}>{group.title}</h2>
+              <p className="picture-book-group-note">{group.note}</p>
+            </div>
+            <span><BookOpen size={17} /> {group.books.length} 本</span>
+          </header>
 
-        <div className="picture-book-grid">
-          {books.map((book) => (
-            <article className="picture-book-card" key={book.bookCode}>
-              <img src={book.coverUrl || book.pages?.[0]?.imageUrl || "/assets/experience/primary/student-reading.webp"} alt={book.title} />
-              <div>
-                <small>{book.subtitle || "人工智能通识 · 互动绘本"}</small>
-                <h3>{book.title}</h3>
-                <p>{book.summary}</p>
-                <ul>
-                  <li><Headphones size={15} />语音朗读与文字讲解</li>
-                  <li><Images size={15} />{book.pages?.length || 0} 页审定故事</li>
-                  <li><Sparkles size={15} />读完进入互动挑战</li>
-                </ul>
-                <button className="button primary" type="button" onClick={() => openBook(book)}>
-                  {session ? "开始阅读" : "登录后开始"}<ArrowRight size={15} />
+          <div className="picture-book-grid">
+            {group.books.map((book) => (
+              <article className="picture-book-card" key={book.bookCode}>
+                <button className="picture-book-cover" type="button" onClick={() => openBook(book)} aria-label={`翻开绘本${book.title}`}>
+                  <img src={book.coverUrl || book.pages?.[0]?.imageUrl || "/assets/experience/primary/student-reading.webp"} alt={book.title} loading="lazy" />
+                  <span className="picture-book-cover-hint"><Headphones size={16} />翻开听故事</span>
                 </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+                <div className="picture-book-copy">
+                  <h3>{book.title}</h3>
+                  <small>{book.subtitle || "人工智能 · 互动绘本"}</small>
+                  <div className="picture-book-facts">
+                    <span><Images size={14} />{book.pages?.length || 0} 页</span>
+                    <span><Headphones size={14} />小智朗读</span>
+                  </div>
+                  <button className="button primary" type="button" onClick={() => openBook(book)}>
+                    开始阅读<ArrowRight size={15} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

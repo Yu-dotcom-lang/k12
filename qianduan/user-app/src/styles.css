@@ -2823,6 +2823,26 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 .picture-book-card li { display:flex; align-items:center; gap:8px; color:#475467; font-size:11px; }
 .picture-book-card li svg { color:#1aa0c9; }
 
+/* 插图版绘本卡：图占大头、字少而大，适合低年级自主浏览 */
+.picture-book-grid.picture-book-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
+.picture-book-card { position:relative; display:flex; flex-direction:column; }
+.picture-book-card .picture-book-cover { position:relative; display:block; width:100%; margin:0; padding:0; border:0; background:none; cursor:pointer; }
+.picture-book-card .picture-book-cover img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px 8px 0 0; background:#eef8fc; }
+.picture-book-cover-hint { position:absolute; left:12px; bottom:12px; display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:999px; color:#17304b; background:rgba(255,255,255,.92); box-shadow:0 4px 14px rgba(23,48,75,.18); font-size:12px; font-weight:800; transition:transform .16s ease; }
+.picture-book-card .picture-book-cover:hover .picture-book-cover-hint { transform:translateY(-2px); }
+.picture-book-card .picture-book-copy { display:grid; justify-items:start; gap:9px; padding:16px 18px 18px; }
+.picture-book-card .picture-book-copy h3 { margin:0; font-size:21px; }
+.picture-book-card .picture-book-copy small { color:#1681aa; font-size:11px; font-weight:800; }
+.picture-book-facts { display:flex; flex-wrap:wrap; gap:8px; }
+.picture-book-facts span { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; color:#0d6e8c; background:#e8f6fb; font-size:11px; font-weight:750; }
+.picture-book-facts svg { color:#1aa0c9; }
+.picture-book-card .picture-book-copy .button { justify-content:center; width:100%; }
+.picture-book-group-note { margin:4px 0 0; color:#667085; font-size:12px; }
+
+/* 小学端首页课程卡：去掉长句，用大按钮引导 */
+.visual-course-card .visual-course-play { display:inline-flex; align-items:center; gap:7px; margin:2px 0 0; padding:9px 16px; color:#0d84aa; background:#e6f6fb; border-radius:999px; font-size:13px; font-weight:800; }
+.visual-course-card .visual-course-play svg { color:#1aa0c9; }
+
 /* 推荐与知识网络采用上下结构，避免左右栏高度差留下大块空白。 */
 .learner-kg-panel.primary-mode > header { background:#f4fbfd; }
 .learner-recommendations { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:0; border-top:1px solid var(--line); }

@@ -215,10 +215,18 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
               <div>
                 <span>{course.subject} · {course.grade}</span>
                 <h3>{course.title}</h3>
-                <p>下一节：{course.next}</p>
-                <button type="button" onClick={() => (course.id ? requireLogin(() => navigate(`courses/${course.id}`)) : requireLogin())}>
-                  进入课程<ArrowRight size={15} />
-                </button>
+                {primary ? (
+                  <button className="text-button visual-course-play" type="button" onClick={() => (course.id ? requireLogin(() => navigate(`courses/${course.id}`)) : requireLogin())}>
+                    <Play size={15} />点开就能学
+                  </button>
+                ) : (
+                  <>
+                    <p>下一节：{course.next}</p>
+                    <button type="button" onClick={() => (course.id ? requireLogin(() => navigate(`courses/${course.id}`)) : requireLogin())}>
+                      进入课程<ArrowRight size={15} />
+                    </button>
+                  </>
+                )}
               </div>
             </article>
           ))}</div>
