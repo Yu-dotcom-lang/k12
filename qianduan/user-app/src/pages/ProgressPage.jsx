@@ -2,6 +2,7 @@ import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, LoaderCircle, Messag
 import { useEffect, useMemo, useState } from "react";
 import { coursesApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
+import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { LearnerKnowledgeNetwork } from "../components/LearnerKnowledgeNetwork.jsx";
 import { LearningRhythm } from "../components/LearningRhythm.jsx";
 import { courseMatchesLearningScope, EXPERIENCE, learningProfileLabel } from "../experience/experience.js";
@@ -121,7 +122,23 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
     [results],
   );
 
-  if (!session) return <div className="page inner-page report-page"><ProgressHeader experience={experience} /><section className="empty-state"><BarChart3 size={28} /><h2>{experience === EXPERIENCE.PRIMARY ? "登录后查看成长记录" : "登录后查看学习报告"}</h2><p>学习档案和作业结果属于个人数据，需要登录后读取。</p><button className="button primary" type="button" onClick={() => requireLogin()}>立即登录</button></section></div>;
+  if (!session) return (
+    <div className="page inner-page report-page">
+      <ProgressHeader experience={experience} />
+      <AuthGateShowcase
+        icon={BarChart3}
+        title={experience === EXPERIENCE.PRIMARY ? "登录后查看成长记录" : "登录后查看学习报告"}
+        description="学习档案和作业结果属于个人数据，需要登录后读取。"
+        features={[
+          { icon: TrendingUp, title: "课程进度总览", text: "每门课学到哪一章、平均进度多少，一眼看清。" },
+          { icon: ClipboardCheck, title: "作业与批改动态", text: "提交状态、得分和老师评语同步展示。" },
+          { icon: BookOpen, title: "AI 课堂小测记录", text: "组题练习的每次成绩自动归档成趋势。" },
+        ]}
+        footnote="学习数据仅自己可见，不会公开展示。"
+        onLogin={() => requireLogin()}
+      />
+    </div>
+  );
   if (loading) return <div className="page inner-page report-page"><div className="loading-state"><LoaderCircle size={22} />正在生成学习报告</div></div>;
 
   return (

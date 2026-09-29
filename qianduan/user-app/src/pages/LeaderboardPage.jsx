@@ -1,7 +1,8 @@
 import { Clap, Crown, Trophy } from "duma-icons-react";
-import { LoaderCircle, RefreshCw, UserRound } from "lucide-react";
+import { Flame, LoaderCircle, RefreshCw, ShieldCheck, Target, UserRound } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { leaderboardApi } from "../api/client.js";
+import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { EXPERIENCE } from "../experience/experience.js";
 import { visualsFor } from "../experience/visualAssets.js";
 
@@ -40,12 +41,16 @@ export function LeaderboardPage({ session, requireLogin, experience = EXPERIENCE
     return (
       <div className="page inner-page leaderboard-page">
         <LeaderboardHero experience={experience} />
-        <section className="empty-state">
-          <img className="leaderboard-empty-mascot" src={pageVisual} alt="" />
-          <h2>登录后查看排行榜</h2>
-          <p>排行榜根据课程章节学习进度生成，只展示匿名编号和积分。</p>
-          <button className="button primary" type="button" onClick={() => requireLogin()}>立即登录</button>
-        </section>
+        <AuthGateShowcase
+          title="登录后查看排行榜"
+          description="排行榜根据课程章节学习进度生成，只展示匿名编号和积分。"
+          features={[
+            { icon: Target, title: "章节进度换积分", text: "报名课程的章节最高进度决定学习积分。" },
+            { icon: ShieldCheck, title: "匿名编号展示", text: "不公开昵称和头像，保护个人隐私。" },
+            { icon: Flame, title: "坚持就会上升", text: "每天进步一点，名次自然往上走。" },
+          ]}
+          onLogin={() => requireLogin()}
+        />
       </div>
     );
   }

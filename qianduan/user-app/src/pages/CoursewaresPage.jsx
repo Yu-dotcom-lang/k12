@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { BookOpenCheck, ChevronRight, Presentation, Sparkles } from "lucide-react";
+import { BookOpenCheck, ChevronRight, ClipboardCheck, Presentation, ShieldCheck, Sparkles } from "lucide-react";
 import { coursewareApi } from "../api/client.js";
+import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { COURSEWARE_MIME, CoursewarePlayer } from "../components/CoursewarePlayer.jsx";
 
 const STAGE_LABELS = {
@@ -69,15 +70,28 @@ export function CoursewaresPage({ session, requireLogin }) {
         <h1>AI 课件</h1>
         <p className="page-subtitle">点开课件，跟小智一页一页学，还能边学边答题。</p>
       </header>
-      {error && <p className="form-error" role="alert">{error}</p>}
+      {error && session && <p className="form-error" role="alert">{error}</p>}
+      {error && !session && (
+        <AuthGateShowcase
+          icon={Presentation}
+          title="登录后查看完整课件书架"
+          description="课件由老师用 AI 生成并审核发布；登录后可以打开课件边学边答题。"
+          features={[
+            { icon: Sparkles, title: "AI 生成 · 老师审核", text: "每份课件都经过老师审核后才发布。" },
+            { icon: BookOpenCheck, title: "一页一页跟着学", text: "图、文、例子分页讲解，像翻绘本一样。" },
+            { icon: ClipboardCheck, title: "边学边答", text: "课件里的小测当场作答，即时反馈。" },
+          ]}
+          onLogin={() => requireLogin()}
+        />
+      )}
       {loading ? (
         <p className="page-loading">正在整理课件书架...</p>
-      ) : items.length === 0 ? (
+      ) : !error && items.length === 0 ? (
         <div className="empty-state">
           <BookOpenCheck size={36} />
           <p>老师还没有发布课件，先去别处逛逛吧～</p>
         </div>
-      ) : (
+      ) : !error && items.length > 0 && (
         <div className="courseware-grid">
           {items.map((item) => (
             <article className="courseware-card" key={item.coursewareId}>
@@ -89,13 +103,32 @@ export function CoursewaresPage({ session, requireLogin }) {
               <button
                 className="button primary"
                 type="button"
-                onClick={() => (session ? openCourseware(item) : requireLogin(() => openCourseware(item)))}
+                onClick={() => openCourseware(item)}
               >
                 开始学习 <ChevronRight size={15} />
               </button>
             </article>
           ))}
         </div>
+      )}
+      {!loading && !error && items.length > 0 && (
+        <footer className="auth-gate-features courseware-shelf-note">
+          <article>
+            <ShieldCheck size={17} />
+            <strong>老师审核过</strong>
+            <span>AI 生成的课件，老师逐页审核后才发布。</span>
+          </article>
+          <article>
+            <BookOpenCheck size={17} />
+            <strong>一页一页跟着学</strong>
+            <span>图、文、例子分页讲解，随时回看。</span>
+          </article>
+          <article>
+            <ClipboardCheck size={17} />
+            <strong>边学边答</strong>
+            <span>课件里的小测当场作答，马上知道对错。</span>
+          </article>
+        </footer>
       )}
     </div>
   );

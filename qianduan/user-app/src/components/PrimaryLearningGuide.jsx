@@ -14,7 +14,7 @@ const PRIMARY_KNOWLEDGE_CODES = new Set([
   "computing.step_by_step_thinking",
 ]);
 
-export function PrimaryLearningGuide({ session, navigate, onAskTopic, schoolStage }) {
+export function PrimaryLearningGuide({ session, navigate, onAskTopic, schoolStage, requireLogin }) {
   const [courses, setCourses] = useState([]);
   const [mastery, setMastery] = useState([]);
   const [loading, setLoading] = useState(Boolean(session));
@@ -76,7 +76,27 @@ export function PrimaryLearningGuide({ session, navigate, onAskTopic, schoolStag
       </div>
 
       {!session ? (
-        <p className="primary-guide-empty">登录后，小智会根据课程和练习记录安排下一步。</p>
+        <>
+          <section className="primary-next-step is-locked">
+            <small>下一步学什么</small>
+            <strong>从互动绘本认识图像分类</strong>
+            <p>登录后，小智会按你的学段安排最合适的下一步。</p>
+            <button className="button primary compact" type="button" onClick={() => requireLogin?.()}>
+              登录解锁<ArrowRight size={14} />
+            </button>
+          </section>
+          <section className="primary-guide-section">
+            <header><Target size={15} /><strong>需要再练一练</strong></header>
+            <p>完成小测后，需要巩固的知识点会在这里排好队。</p>
+          </section>
+          <section className="primary-guide-section">
+            <header><BookOpen size={15} /><strong>为你推荐的课程</strong></header>
+            <p>按学段挑选的猫咪侦探课和绘本课会出现在这里。</p>
+          </section>
+          <button className="primary-picture-book-link" type="button" onClick={() => navigate("picture-books")}>
+            <BookOpen size={17} /><span><strong>互动绘本专题</strong><small>先去听一个故事</small></span><ArrowRight size={15} />
+          </button>
+        </>
       ) : loading ? (
         <div className="primary-guide-loading"><LoaderCircle className="spin" size={17} />正在准备学习建议</div>
       ) : (

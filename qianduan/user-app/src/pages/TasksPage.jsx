@@ -355,6 +355,11 @@ function EmptyTasks({ title, detail, onLogin }) {
       <h2>{title}</h2>
       <p>{detail}</p>
       {onLogin && <button className="button primary" type="button" onClick={onLogin}>立即登录</button>}
+      <div className="tasks-empty-features">
+        <article><CalendarCheck2 size={16} /><strong>状态跟踪</strong><span>待完成、已提交、已批改一目了然</span></article>
+        <article><CalendarCheck2 size={16} /><strong>学习日历</strong><span>作业动态自动记录到日历</span></article>
+        <article><Sparkles size={16} /><strong>AI 组题练习</strong><span>不用等老师发布，选主题就能练</span></article>
+      </div>
     </section>
   );
 }

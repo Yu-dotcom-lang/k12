@@ -356,8 +356,8 @@ main { min-height: 100vh; overflow-x: hidden; }
 .tasks-page .task-summary article.tone-progress > svg { color:#a23b65; background:#ffeaf2; }
 .tasks-page .task-summary article.tone-progress strong { color:#a23b65; }
 
-.tasks-workspace { display:grid; grid-template-columns:minmax(0,1fr) 340px; align-items:start; gap:22px; }
-.tasks-main-panel { min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.tasks-workspace { display:grid; grid-template-columns:minmax(0,1fr) 340px; align-items:stretch; gap:22px; }
+.tasks-main-panel { display:flex; flex-direction:column; min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:#fff; }
 .tasks-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:80px; padding:16px 18px; border-bottom:1px solid var(--line); background:#fbfcfd; }
 .tasks-panel-heading > div:first-child { min-width:0; }
 .tasks-panel-heading > div:first-child small { color:var(--blue-dark); font-size:9px; font-weight:850; }
@@ -365,7 +365,7 @@ main { min-height: 100vh; overflow-x: hidden; }
 .tasks-panel-heading .segmented-control { flex:none; margin:0; }
 .tasks-main-panel .task-board { border-top:0; }
 .tasks-main-panel .task-board article { padding-inline:18px; }
-.tasks-main-panel .empty-state,.tasks-main-panel .loading-state { min-height:330px; margin:0; border:0; }
+.tasks-main-panel .empty-state,.tasks-main-panel .loading-state { flex:1; min-height:330px; margin:0; border:0; }
 
 .tasks-sidebar { position:sticky; top:82px; display:grid; gap:14px; }
 .task-widget { overflow:hidden; border:1px solid var(--line); border-radius:8px; background:#fff; }
@@ -5332,3 +5332,62 @@ body:has(main.experience-teen)::after {
 .courseware-speak-wrap .courseware-speak .spin { animation: spin 0.9s linear infinite; }
 .courseware-speak:disabled { opacity: .65; cursor: wait; }
 .courseware-speak-error { color: var(--danger, #c0392b); font-size: 11px; }
+
+/* ===== 空泛布局优化（2026-09-29）：hero 快捷问题 + 登录价值展示面板 ===== */
+.hero-question-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.hero-question-label { display:inline-flex; align-items:center; gap:5px; color:var(--muted); font-size:12px; font-weight:750; }
+.hero-question-chip { padding:7px 13px; color:#2b5a6b; border:1px solid #cfe3ea; border-radius:999px; background:#fff; font-size:12px; cursor:pointer; transition:border-color .15s ease, background .15s ease, transform .15s ease; }
+.hero-question-chip:hover { border-color:#7cc6d8; background:#f2fbfe; transform:translateY(-1px); }
+.experience-primary .hero-question-chip { color:#1d6d85; border-color:#bfe0ea; }
+
+.ai-studio-gate-icon { display:grid; place-items:center; width:52px; height:52px; color:#0f7d96; border:1px solid #cfe5ee; border-radius:14px; background:#eef8fb; }
+.ai-studio-gate-features { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; width:min(860px, 100%); margin-top:10px; text-align:left; }
+.ai-studio-gate-features article { display:grid; gap:3px; align-content:start; padding:13px 14px; border:1px solid #e0edf2; border-radius:10px; background:#f7fbfd; }
+.ai-studio-gate-features article svg { color:#2b95b0; margin-bottom:3px; }
+.ai-studio-gate-features strong { color:#17304b; font-size:13px; }
+.ai-studio-gate-features span { color:#667085; font-size:11px; line-height:1.6; }
+.experience-primary .ai-studio-gate-features article { border-radius:8px; }
+
+/* 未登录占位统一升级：讲清登录后能得到什么，替代"一句话+按钮"。 */
+.auth-gate { display:grid; gap:16px; padding:26px 28px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.auth-gate-intro { display:flex; align-items:center; flex-wrap:wrap; gap:14px; }
+.auth-gate-icon { display:grid; place-items:center; flex:none; width:46px; height:46px; color:#0f7d96; border:1px solid #d5e9ef; border-radius:12px; background:#eef8fb; }
+.auth-gate-copy { flex:1 1 260px; min-width:0; }
+.auth-gate-copy h2 { margin:0 0 4px; color:var(--ink); font-size:19px; }
+.auth-gate-copy p { margin:0; color:var(--muted); font-size:13px; line-height:1.65; }
+.auth-gate-features { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+.auth-gate-features article { display:grid; gap:3px; align-content:start; padding:13px 14px; border:1px solid #e3ecf2; border-radius:10px; background:#f8fbfd; }
+.auth-gate-features article svg { color:var(--blue); margin-bottom:3px; }
+.auth-gate-features strong { color:var(--ink); font-size:13px; }
+.auth-gate-features span { color:var(--muted); font-size:11px; line-height:1.6; }
+.auth-gate-footnote { margin:0; color:#98a2b3; font-size:11px; }
+.experience-primary .auth-gate { border-color:#cfe5ee; border-top:4px solid #f0c43f; border-radius:8px; background:#fdfeff; }
+
+.tasks-empty-features { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; width:min(640px, 100%); margin-top:8px; text-align:left; }
+.tasks-empty-features article { display:grid; gap:2px; align-content:start; padding:11px 12px; border:1px solid #e3ecf2; border-radius:8px; background:#f8fbfd; }
+.tasks-empty-features article svg { color:var(--blue); }
+.tasks-empty-features strong { color:var(--ink); font-size:12px; }
+.tasks-empty-features span { color:var(--muted); font-size:10px; line-height:1.55; }
+
+/* 学习向导未登录：用内容预览替代一句话空态。 */
+.primary-next-step.is-locked { border-style:dashed; background:#fffdf2; }
+
+@media (max-width:860px) {
+  .ai-studio-gate-features { grid-template-columns:1fr; width:100%; }
+  .auth-gate-features { grid-template-columns:1fr; }
+  .tasks-empty-features { grid-template-columns:1fr; }
+  .auth-gate { padding:20px 18px; }
+}
+
+/* 小学端页脚与初高中端一致加浅色毛玻璃底，避免星空背景上文字看不清。 */
+.experience-primary .site-footer {
+  border-top-color: rgba(34, 87, 106, .16);
+  background: rgba(252, 254, 252, .8);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+/* 单门板页面（学习报告/排行榜）登录门在页内垂直居中填充，避免下半屏空白。 */
+.report-page .auth-gate,
+.leaderboard-page .auth-gate { min-height: 480px; align-content: center; }
+.courseware-shelf-note { margin-top: 18px; }

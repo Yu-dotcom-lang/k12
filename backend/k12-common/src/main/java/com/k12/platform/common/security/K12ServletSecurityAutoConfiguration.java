@@ -211,6 +211,10 @@ public class K12ServletSecurityAutoConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/learning/courses/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.COURSE_CREATE)
                         .requestMatchers(HttpMethod.PUT, "/api/v1/learning/courses/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.COURSE_UPDATE)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/learning/courses/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.COURSE_DELETE)
+                        /* 已发布课件是公开教学内容：未登录可浏览书架和打开课件，生成/发布仍仅管理员。
+                         * 必须放在下面的 GET /agents/** 通配规则之前（首次匹配生效）。 */
+                        .requestMatchers(HttpMethod.GET, "/api/v1/agents/courseware/published",
+                                "/api/v1/agents/courseware/published/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/agents/**").hasAnyAuthority(K12Authorities.ROLE_ADMIN, K12Authorities.AGENT_READ)
                         /* 课件生成与发布仅管理员可操作，必须先于下面的 AGENT_INVOKE 通配规则。 */
                         .requestMatchers(HttpMethod.POST, "/api/v1/agents/courseware/**").hasAuthority(K12Authorities.ROLE_ADMIN)

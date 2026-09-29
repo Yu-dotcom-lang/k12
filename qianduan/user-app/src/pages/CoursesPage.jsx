@@ -18,39 +18,54 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
   const [query, setQuery] = useState("");
   const [courses, setCourses] = useState([]);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(Boolean(session));
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!session) {
-      setCourses([]);
-      setHistory([]);
-      setLoading(false);
-      return;
-    }
+    // 未登录也能浏览课程目录（走公开推荐接口），报名和进度才需要登录。
+    let active = true;
     setLoading(true);
+    setError("");
     Promise.all([
-      coursesApi.list(),
-      coursesApi.history(20).catch(() => []),
+      session ? coursesApi.list() : coursesApi.recommended(8).catch(() => []),
+      session ? coursesApi.history(20).catch(() => []) : Promise.resolve([]),
     ])
       .then(([courseList, historyValue]) => {
+        if (!active) return;
         setCourses(Array.isArray(courseList) ? courseList : (courseList?.items || []));
         setHistory(Array.isArray(historyValue) ? historyValue : (historyValue?.items || []));
       })
-      .catch((requestError) => setError(requestError.message))
-      .finally(() => setLoading(false));
+      .catch((requestError) => active && setError(requestError.message))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
   }, [session]);
 
   useEffect(() => setSubject("全部"), [experience, learningProfile?.schoolStage]);
 
-  const stageCourses = useMemo(
-    () => courses.filter((course) => courseMatchesLearningScope(
+  // 未登录且公开接口没有数据时，用与首页一致的示例课程兜底，课程中心不再是一块空白。
+  const fallbackPreviews = useMemo(
+    () => visualCourses
+      .filter((course) => courseMatchesLearningScope(course.grade, learningProfile?.schoolStage, experience))
+      .map((course, index) => ({
+        id: `preview-${index}`,
+        title: course.title,
+        subject: course.subject,
+        gradeLevel: course.grade,
+        description: course.next ? `下一节：${course.next}` : course.lessons,
+        coverUrl: course.image,
+        preview: true,
+      })),
+    [experience, learningProfile?.schoolStage],
+  );
+
+  const stageCourses = useMemo(() => {
+    const apiCourses = courses.filter((course) => courseMatchesLearningScope(
       course.gradeLevel,
       learningProfile?.schoolStage,
       experience,
-    )),
-    [courses, experience, learningProfile?.schoolStage],
-  );
+    ));
+    return !session && apiCourses.length === 0 ? fallbackPreviews : apiCourses;
+  }, [courses, session, fallbackPreviews, experience, learningProfile?.schoolStage]);
   const subjects = useMemo(
     () => ["全部", ...new Set(stageCourses.map((course) => course.subject).filter(Boolean))],
     [stageCourses],
@@ -129,14 +144,14 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
           ))}
         </div>
       </div>
-      {!session ? (
-        <EmptyState title="登录后查看课程" description="课程列表、报名状态和学习进度需要登录后读取。" action="立即登录" onAction={() => requireLogin()} />
-      ) : loading ? (
+      {loading ? (
         <LoadingState label="正在加载课程" />
       ) : error ? (
         <EmptyState title="课程加载失败" description={error} action="重新加载" onAction={() => window.location.reload()} />
       ) : filtered.length === 0 ? (
-        <EmptyState title="暂无课程" description="当前筛选条件下没有可显示的课程。" />
+        session
+          ? <EmptyState title="暂无课程" description="当前筛选条件下没有可显示的课程。" />
+          : <EmptyState title="登录后查看完整课程" description="课程目录按学习阶段筛选展示，登录后可查看全部并报名。" action="立即登录" onAction={() => requireLogin()} />
       ) : (
         <section className="course-grid">
           {filtered.map((course, index) => {
@@ -151,12 +166,12 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
                 }}
               />
               <div className="course-detail-copy">
-                <span>{course.subject} · {course.gradeLevel}</span>
+                <span>{course.subject} · {course.gradeLevel}{course.preview ? " · 示例课程" : ""}</span>
                 <h2>{course.title}</h2>
                 <p>{course.description || "课程暂未填写简介"}</p>
                 {progress && <div className="course-card-progress"><div><span style={{ width: `${Math.min(100, Math.max(0, Number(progress.progressPercent || 0)))}%` }} /></div><small>{progress.progressPercent}% · 已完成 {progress.completedChapters}/{progress.totalChapters} 章</small></div>}
                 <button className="button secondary" type="button" onClick={() => openCourse(course)}>
-                  <BookOpen size={17} />进入课程<ArrowRight size={15} />
+                  <BookOpen size={17} />{session ? "进入课程" : "登录后报名"}<ArrowRight size={15} />
                 </button>
               </div>
             </article>;

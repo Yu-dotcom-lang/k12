@@ -1,4 +1,4 @@
-import { Bot, ChevronDown, Code2, Sparkles } from "lucide-react";
+import { Bot, ChevronDown, Code2, ClipboardCheck, GraduationCap, PlayCircle, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TeachingAssistantChat } from "../components/TeachingAssistantChat.jsx";
 import { PrimaryLearningGuide } from "../components/PrimaryLearningGuide.jsx";
@@ -9,6 +9,11 @@ import { visualsFor } from "../experience/visualAssets.js";
 const RAIL_MIN = 220;
 const RAIL_MAX = 440;
 const RAIL_DEFAULT = 280;
+// 首屏热门问题：让 hero 不再只有一行标题，点一下就能开始提问。
+const QUICK_QUESTIONS = {
+  primary: ["AI 是怎么认出小猫的？", "为什么天空是蓝色的？", "给我讲个太空的故事", "什么是人工智能？"],
+  teen: ["什么是机器学习？", "推荐算法怎么懂我？", "大模型是怎么工作的？", "学 AI 需要什么基础？"],
+};
 export function AiStudioPage({
   session,
   displayName,
@@ -100,6 +105,17 @@ export function AiStudioPage({
     });
   }
 
+  function askQuickQuestion(question) {
+    requireLogin(() => {
+      setSeedPrompt({
+        prompt: primary
+          ? `请用适合小学生的短句和生活例子讲讲：${question}`
+          : `请给我讲讲：${question}`,
+        preferDeterministic: false,
+      });
+    });
+  }
+
   function startResize(event) {
     event.preventDefault();
     dragging.current = true;
@@ -116,6 +132,14 @@ export function AiStudioPage({
             <img className="ai-studio-title-doodle experience-title-sticker" src={visuals.ai} alt="" width={92} height={92} />
           </h1>
           <p>{primary ? "挑一个好奇的问题，小智会用故事、例子和小挑战陪你学会它。" : "选择左侧主题开始学习；右侧对话窗可随时提问、看讲解与小测。"}</p>
+          <div className="hero-question-row" aria-label="热门问题，点击即可向小智提问">
+            <span className="hero-question-label"><Sparkles size={13} />{primary ? "试试问小智" : "大家都在问"}</span>
+            {QUICK_QUESTIONS[primary ? "primary" : "teen"].map((question) => (
+              <button key={question} type="button" className="hero-question-chip" onClick={() => askQuickQuestion(question)}>
+                {question}
+              </button>
+            ))}
+          </div>
         </div>
         <button
           className="button secondary"
@@ -133,7 +157,7 @@ export function AiStudioPage({
         style={{ gridTemplateColumns: `${railWidth}px 6px minmax(0, 1fr)` }}
       >
         {primary ? (
-          <PrimaryLearningGuide session={session} navigate={navigate} onAskTopic={askPrimaryTopic} schoolStage={schoolStage} />
+          <PrimaryLearningGuide session={session} navigate={navigate} onAskTopic={askPrimaryTopic} schoolStage={schoolStage} requireLogin={requireLogin} />
         ) : <aside className="ai-topic-rail" aria-label="推荐学习主题">
           <div className="ai-topic-rail-head">
             <Bot size={16} />
@@ -216,12 +240,29 @@ export function AiStudioPage({
         <div className="ai-studio-main">
           {!session ? (
             <section className="ai-studio-gate">
-              <Bot size={28} />
-              <h2>登录后开始 AI 通识学习</h2>
-              <p>登录后可按学段讲解、播放动画/步骤，并保存课堂小测结果。</p>
+              <span className="ai-studio-gate-icon"><Bot size={24} /></span>
+              <h2>{primary ? "登录后，小智就能陪你学啦" : "登录后开始 AI 通识学习"}</h2>
+              <p>{primary ? "小智会按你的学段来讲，还能陪你做课堂小测、安排下一步。" : "登录后可按学段讲解、播放动画/步骤，并保存课堂小测结果。"}</p>
               <button className="button primary" type="button" onClick={() => requireLogin()}>
                 登录学习台
               </button>
+              <div className="ai-studio-gate-features">
+                <article>
+                  <GraduationCap size={17} />
+                  <strong>按学段讲解</strong>
+                  <span>{primary ? "一年级有一年级的讲法，不会太难" : "内容深度跟随你的学习档案自动调整"}</span>
+                </article>
+                <article>
+                  <PlayCircle size={17} />
+                  <strong>动画与步骤演示</strong>
+                  <span>{primary ? "看动画、跟着一步步动手做" : "抽象概念用动画和分步演示讲清楚"}</span>
+                </article>
+                <article>
+                  <ClipboardCheck size={17} />
+                  <strong>课堂小测记录</strong>
+                  <span>{primary ? "做完小测，小智帮你安排复习" : "小测成绩自动归档到学习报告"}</span>
+                </article>
+              </div>
             </section>
           ) : (
             <TeachingAssistantChat
