@@ -17,7 +17,7 @@ import { CoursewarePlayer, isCoursewareArtifact } from "./CoursewarePlayer.jsx";
 import { MarkdownContent } from "./MarkdownContent.jsx";
 import { TeachingSteps } from "./TeachingSteps.jsx";
 import { topicCodeForId } from "../data/teachingTopics.js";
-import { primaryPictureFor } from "../data/primaryChatPictures.js";
+import { primaryEmojiFor, primaryPictureFor } from "../data/primaryChatPictures.js";
 
 export { TEACHING_TOPICS, TOPIC_CATEGORIES, topicsByCategory } from "../data/teachingTopics.js";
 
@@ -270,7 +270,7 @@ function MultimodalNextSteps({ animationArtifact, onOpenCodeLab }) {
   );
 }
 
-function PracticeQuiz({ artifact, runId, onPracticeRecorded }) {
+function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false }) {
   const payload = artifact?.payload;
   const questions = Array.isArray(payload?.questions) ? payload.questions : [];
   const [answers, setAnswers] = useState({});
@@ -336,10 +336,12 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded }) {
         const selected = answers[question.id];
         const correct = submitted && selected === question.correctOptionId;
         return (
-          <fieldset key={question.id} disabled={submitted}>
+          <fieldset key={question.id} disabled={submitted} className={illustrated ? "illustrated" : ""}>
             <legend>{questionIndex + 1}. {question.prompt}</legend>
-            <QuestionVisual visual={question.visual} />
-            {question.options.map((option) => (
+            <QuestionVisual visual={question.visual || emojiVisualFor(question.prompt, illustrated)} />
+            {question.options.map((option, optionIndex) => {
+              const optionEmoji = illustrated ? primaryEmojiFor(option.text) : "";
+              return (
               <label
                 className={
                   submitted && option.id === question.correctOptionId
@@ -357,10 +359,17 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded }) {
                   checked={selected === option.id}
                   onChange={() => setAnswers((current) => ({ ...current, [question.id]: option.id }))}
                 />
+                {illustrated && (
+                  <span className="quiz-option-lead">
+                    <span className={`quiz-option-letter tone-${optionIndex % 4}`} aria-hidden="true">{String.fromCharCode(65 + optionIndex)}</span>
+                    {optionEmoji && <span className="quiz-option-emoji" aria-hidden="true">{optionEmoji}</span>}
+                  </span>
+                )}
                 <span>{option.text}</span>
                 {submitted && option.id === question.correctOptionId && <CheckCircle2 size={14} />}
               </label>
-            ))}
+              );
+            })}
             {submitted && selected && (
               <p className={correct ? "quiz-feedback correct" : "quiz-feedback"}>{question.explanation}</p>
             )}
@@ -403,6 +412,13 @@ function QuestionVisual({ visual }) {
   );
 }
 
+/** 低年级题干没有配图时，按题意给一张 emoji 图卡；没把握就不给。 */
+function emojiVisualFor(prompt, illustrated) {
+  if (!illustrated) return null;
+  const value = primaryEmojiFor(prompt);
+  return value ? { kind: "emoji", value, alt: "题目插图" } : null;
+}
+
 function GuidedChoices({ guidedTurn, active, disabled, onChoose }) {
   if (!guidedTurn || !Array.isArray(guidedTurn.choices)) return null;
   const current = Number(guidedTurn.progressCurrent) || 1;
@@ -422,16 +438,20 @@ function GuidedChoices({ guidedTurn, active, disabled, onChoose }) {
       {guidedTurn.encouragement && <p>{guidedTurn.encouragement}</p>}
       <QuestionVisual visual={guidedTurn.visual} />
       <div className="guided-choice-list">
-        {guidedTurn.choices.slice(0, 3).map((choice) => (
-          <button
-            type="button"
-            key={choice.id || choice.label}
-            disabled={!active || disabled}
-            onClick={() => onChoose(choice.value || choice.label)}
-          >
-            {choice.label}
-          </button>
-        ))}
+        {guidedTurn.choices.slice(0, 3).map((choice) => {
+          const choiceEmoji = primaryEmojiFor(choice.label);
+          return (
+            <button
+              type="button"
+              key={choice.id || choice.label}
+              disabled={!active || disabled}
+              onClick={() => onChoose(choice.value || choice.label)}
+            >
+              {choiceEmoji && <span className="guided-choice-emoji" aria-hidden="true">{choiceEmoji}</span>}
+              {choice.label}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
@@ -895,6 +915,7 @@ export function TeachingAssistantChat({
                   artifact={message.gameArtifact}
                   runId={message.runId}
                   onPracticeRecorded={onPracticeRecorded}
+                  illustrated={isLowerPrimary}
                 />
               )}
               {message.role === "assistant" && !isLowerPrimary && (

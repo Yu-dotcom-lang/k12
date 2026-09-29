@@ -2737,6 +2737,69 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
   font-size:11px;
   font-weight:700;
 }
+/* 一二年级左边栏：顶部导航的入口搬到这里，图大字少 */
+.primary-side-nav {
+  position:fixed;
+  top:64px;
+  bottom:0;
+  left:0;
+  z-index:25;
+  display:none;
+  flex-direction:column;
+  gap:4px;
+  width:132px;
+  padding:14px 10px 20px;
+  overflow-y:auto;
+  scrollbar-width:none;
+  border-right:1px solid #d9ecf2;
+  background:rgba(250,253,255,.98);
+}
+.primary-side-nav::-webkit-scrollbar { display:none; }
+.primary-side-nav button {
+  display:grid;
+  justify-items:center;
+  gap:5px;
+  padding:10px 6px;
+  border:1px solid transparent;
+  border-radius:14px;
+  color:#33586b;
+  font-size:12px;
+  font-weight:800;
+}
+.primary-side-nav button img {
+  width:46px;
+  height:46px;
+  object-fit:cover;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 3px 10px rgba(30,112,137,.12);
+}
+.primary-side-nav button:hover { border-color:#bfe4eb; background:#f2fbfe; }
+.primary-side-nav button.active { border-color:#9fd7e4; background:#e9f9fd; color:#0d84aa; }
+@media (min-width: 1101px) {
+  .lower-primary-shell .primary-side-nav { display:flex; }
+  .lower-primary-shell .site-header nav { display:none; }
+  .lower-primary-shell .route-view { padding-left:132px; }
+  .lower-primary-shell .site-footer { padding-left:calc(132px + max(28px, (100vw - 1420px) / 2)); }
+}
+/* 低年级小测图画化：A/B/C 彩色字母徽章 + 关键词 emoji */
+.practice-quiz fieldset.illustrated label {
+  grid-template-columns:15px auto minmax(0,1fr) 15px;
+  gap:8px;
+  padding:9px 10px;
+  font-size:12px;
+}
+.practice-quiz fieldset.illustrated legend { color:#1d5b70; font-size:12px; font-weight:800; }
+.practice-quiz fieldset.illustrated .quiz-option-lead { display:inline-flex; align-items:center; gap:6px; }
+.practice-quiz .quiz-option-letter { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:900; }
+.practice-quiz .quiz-option-letter.tone-0 { background:#f6a54c; }
+.practice-quiz .quiz-option-letter.tone-1 { background:#28a7be; }
+.practice-quiz .quiz-option-letter.tone-2 { background:#8b6cf0; }
+.practice-quiz .quiz-option-letter.tone-3 { background:#4cc38a; }
+.practice-quiz fieldset.illustrated .quiz-option-emoji { font-size:18px; line-height:1; }
+.practice-quiz fieldset.illustrated .practice-quiz-visual.emoji { padding:12px 0; font-size:56px; }
+.guided-choice-list button { display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+.guided-choice-list .guided-choice-emoji { font-size:15px; line-height:1; }
 .guided-turn {
   display:grid;
   gap:10px;
