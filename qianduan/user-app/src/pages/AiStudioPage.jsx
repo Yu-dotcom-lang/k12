@@ -7,7 +7,7 @@ import { WorkspaceProfileBar } from "../components/WorkspaceProfileBar.jsx";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { topicsByCategory } from "../data/teachingTopics.js";
 import { primaryChatStarters } from "../data/primaryChatPictures.js";
-import { knowledgeGraphApi, practiceApi, profileApi, evidenceApi } from "../api/client.js";
+import { knowledgeGraphApi, practiceApi, profileApi } from "../api/client.js";
 import { buildLessonWhy } from "../utils/lessonWhy.js";
 import { EXPERIENCE } from "../experience/experience.js";
 
@@ -44,7 +44,6 @@ export function AiStudioPage({
   const [lesson, setLesson] = useState(null);
   const [profileData, setProfileData] = useState({ ready: false, profile: null, mastery: [], insights: null, interests: [] });
   const [gaps, setGaps] = useState([]);
-  const [evidence, setEvidence] = useState([]);
   const dragging = useRef(false);
   const dragTarget = useRef("rail");
   const layoutRef = useRef(null);
@@ -118,27 +117,6 @@ export function AiStudioPage({
       active = false;
     };
   }, [session]);
-
-  // 学习证据：与「我的成长」页同源，取最近几条放进右栏课堂面板；
-  // 每轮对话结束（busy 转 false）自动刷新，刚做的小测马上能看见。
-  const loadEvidence = useCallback(() => {
-    if (!session) {
-      setEvidence([]);
-      return Promise.resolve();
-    }
-    return evidenceApi.mine(8)
-      .then((value) => setEvidence(Array.isArray(value) ? value : []))
-      .catch(() => setEvidence([]));
-  }, [session]);
-  useEffect(() => {
-    loadEvidence();
-  }, [loadEvidence]);
-  const lessonBusy = Boolean(lesson?.busy);
-  const prevBusyRef = useRef(false);
-  useEffect(() => {
-    if (prevBusyRef.current && !lessonBusy) loadEvidence();
-    prevBusyRef.current = lessonBusy;
-  }, [lessonBusy, loadEvidence]);
 
   const focusTopicCode = lesson?.topicCode || null;
   useEffect(() => {
@@ -442,7 +420,6 @@ export function AiStudioPage({
           lesson={lesson}
           why={lessonWhy}
           fallbackNext={fallbackNext}
-          evidence={evidence}
           onAskTopic={primary ? askPrimaryTopic : askQuickQuestion}
         />
       </div>
