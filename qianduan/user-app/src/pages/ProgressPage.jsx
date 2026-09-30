@@ -1,6 +1,6 @@
 import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, FileText, LoaderCircle, MessageSquareText, Sparkles, Target, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { coursesApi, diagnosticsApi, evidenceApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
+import { coursesApi, diagnosticsApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { LearnerKnowledgeNetwork } from "../components/LearnerKnowledgeNetwork.jsx";
@@ -8,11 +8,6 @@ import { LearningRhythm } from "../components/LearningRhythm.jsx";
 import { courseMatchesLearningScope, EXPERIENCE, learningProfileLabel } from "../experience/experience.js";
 
 const stages = [["PRIMARY_LOWER", "小学低年级"], ["PRIMARY_UPPER", "小学高年级"], ["JUNIOR_HIGH", "初中"], ["SENIOR_HIGH", "高中"]];
-const EVIDENCE_META = {
-  PRACTICE_QUIZ: { label: "AI 小测", tone: "practice", icon: ClipboardCheck },
-  TUTOR_CHAT: { label: "教学对话", tone: "tutor", icon: MessageSquareText },
-  DIAGNOSTIC: { label: "学情诊断", tone: "diagnostic", icon: Target },
-};
 function ProgressHeader({ experience }) {
   const primary = experience === EXPERIENCE.PRIMARY;
   return (
@@ -34,7 +29,6 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
   const [results, setResults] = useState([]);
   const [practiceInsights, setPracticeInsights] = useState([]);
   const [knowledgeMastery, setKnowledgeMastery] = useState([]);
-  const [evidence, setEvidence] = useState([]);
   const [diagnostic, setDiagnostic] = useState(null);
   const [loading, setLoading] = useState(Boolean(session));
   const [error, setError] = useState("");
@@ -61,10 +55,9 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
       homeworksApi.learningResults(1, 10),
       practiceApi.insights(),
       practiceApi.mastery(),
-      evidenceApi.mine(20),
       diagnosticsApi.latest(),
     ])
-      .then(([profileResult, historyResult, homeworkResult, practiceResult, masteryResult, evidenceResult, diagnosticResult]) => {
+      .then(([profileResult, historyResult, homeworkResult, practiceResult, masteryResult, diagnosticResult]) => {
         if (!active) return;
         const failedSources = [];
         const profileValue = profileResult.status === "fulfilled" ? profileResult.value : activeLearningProfile;
@@ -107,13 +100,6 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
         } else {
           setKnowledgeMastery([]);
           failedSources.push("知识点掌握情况");
-        }
-
-        if (evidenceResult.status === "fulfilled") {
-          setEvidence(Array.isArray(evidenceResult.value) ? evidenceResult.value : []);
-        } else {
-          setEvidence([]);
-          failedSources.push("学习证据");
         }
 
         if (diagnosticResult.status === "fulfilled") {
@@ -260,31 +246,6 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
                 </article>;
               }) : <p>完成 AI 助教小测后，这里会根据近期练习给出建议。</p>}
               <p className="practice-insight-note">仅反映形成性练习，不是正式成绩或能力评定。</p>
-            </div>
-          </section>
-          <section className="evidence-panel">
-            <ClipboardCheck />
-            <div>
-              <small>学习证据</small>
-              <h2>每一步都有记录</h2>
-              {evidence.length ? (
-                <div className="evidence-timeline">
-                  {evidence.slice(0, 8).map((item) => {
-                    const meta = EVIDENCE_META[item.evidenceType] || EVIDENCE_META.TUTOR_CHAT;
-                    const Icon = meta.icon;
-                    return (
-                      <article className="evidence-row" key={item.id}>
-                        <span className={`evidence-icon tone-${meta.tone}`}><Icon size={15} /></span>
-                        <div>
-                          <strong>{item.title}</strong>
-                          <small>{meta.label}{item.scorePercent != null ? ` · ${item.scorePercent}%` : " · 参与讨论"} · {formatDate(item.createdTime)}</small>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              ) : <p className="inline-empty">完成小测、向小智提问或参加首次诊断后，学习证据会显示在这里。</p>}
-              <p className="practice-insight-note">证据来自服务端确认的学习活动，仅用于画像与推荐。</p>
             </div>
           </section>
           <section><BarChart3 /><div><small>最近批改</small><h2>{latestGraded ? `${latestGraded.score} 分` : "暂无已批改作业"}</h2><p>{latestGraded?.feedback || "完成并提交作业后，成绩和教师反馈会显示在这里。"}</p></div></section>
