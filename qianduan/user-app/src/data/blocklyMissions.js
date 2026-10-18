@@ -619,3 +619,116 @@ function missionChecks(mission, trace) {
 
   return [];
 }
+
+/**
+ * 「示范程序」：每关的满分程序（Blockly 序列化 JSON），一键摆进工作区。
+ * 仅使用各关卡服务端白名单内的积木类型（保存时 rejectDisallowedBlocks 校验）。
+ */
+const DEMO_PROGRAM_SPECS = {
+  "label-training-data": [
+    { t: "k12_label_image", f: { IMAGE: "cat-1", CATEGORY: "cat" } },
+    { t: "k12_label_image", f: { IMAGE: "cat-2", CATEGORY: "cat" } },
+    { t: "k12_label_image", f: { IMAGE: "dog-1", CATEGORY: "dog" } },
+    { t: "k12_label_image", f: { IMAGE: "dog-2", CATEGORY: "dog" } },
+    { t: "k12_train_classifier" },
+  ],
+  "predict-and-decide": [
+    { t: "k12_train_classifier" },
+    { t: "k12_predict_image", f: { IMAGE: "mystery-cat" } },
+    {
+      t: "controls_if",
+      cond: { t: "k12_prediction_equals", f: { CATEGORY: "cat" } },
+      body: [{ t: "k12_say", f: { MESSAGE: "这是猫" } }],
+    },
+  ],
+  "repeat-a-route": [
+    { t: "controls_repeat_ext", times: 4, body: [{ t: "k12_move", f: { STEPS: 2 } }] },
+    { t: "k12_say", f: { MESSAGE: "任务完成" } },
+  ],
+  "confidence-gate": [
+    { t: "k12_train_classifier" },
+    { t: "k12_predict_image", f: { IMAGE: "mystery-cat" } },
+    {
+      t: "controls_if",
+      cond: { t: "k12_confidence_at_least", f: { THRESHOLD: 80 } },
+      body: [{ t: "k12_say", f: { MESSAGE: "我很有把握" } }],
+    },
+  ],
+  "campus-ai-patrol": [
+    { t: "k12_train_classifier" },
+    { t: "k12_predict_image", f: { IMAGE: "mystery-dog" } },
+    {
+      t: "controls_if",
+      cond: { t: "k12_prediction_equals", f: { CATEGORY: "dog" } },
+      body: [
+        { t: "controls_repeat_ext", times: 4, body: [{ t: "k12_move", f: { STEPS: 2 } }] },
+        { t: "k12_say", f: { MESSAGE: "巡检完成" } },
+      ],
+    },
+  ],
+  "balance-training-data": [
+    { t: "k12_label_image", f: { IMAGE: "cat-1", CATEGORY: "cat" } },
+    { t: "k12_label_image", f: { IMAGE: "cat-2", CATEGORY: "cat" } },
+    { t: "k12_label_image", f: { IMAGE: "dog-1", CATEGORY: "dog" } },
+    { t: "k12_label_image", f: { IMAGE: "dog-2", CATEGORY: "dog" } },
+    { t: "k12_check_balance" },
+    { t: "k12_say", f: { MESSAGE: "数据要均衡" } },
+  ],
+  "ai-knowledge-quiz": [
+    { t: "k12_quiz_answer", f: { QUESTION: "q1", ANSWER: "b" } },
+    { t: "k12_quiz_answer", f: { QUESTION: "q2", ANSWER: "b" } },
+    { t: "k12_quiz_answer", f: { QUESTION: "q3", ANSWER: "a" } },
+    { t: "k12_submit_quiz" },
+  ],
+  "ai-sequence-story": [
+    { t: "k12_switch_scene", f: { SCENE: "classroom" } },
+    { t: "k12_wait", f: { SECONDS: 1 } },
+    { t: "k12_switch_scene", f: { SCENE: "lab" } },
+    { t: "k12_wait", f: { SECONDS: 1 } },
+    { t: "k12_switch_scene", f: { SCENE: "future" } },
+    { t: "k12_say", f: { MESSAGE: "故事结束" } },
+  ],
+};
+
+function buildDemoChain(specs, prefix) {
+  let first = null;
+  let cursor = null;
+  specs.forEach((spec, index) => {
+    const id = `${prefix}${index}`;
+    const block = { type: spec.t, id };
+    if (spec.f) block.fields = spec.f;
+    const inputs = {};
+    if (spec.times) inputs.TIMES = { shadow: { type: "math_number", fields: { NUM: spec.times } } };
+    if (spec.cond) inputs.IF0 = { block: { type: spec.cond.t, fields: spec.cond.f, id: `${id}c` } };
+    // controls_repeat_ext 的循环体输入叫 DO（controls_if 才是 DO0），挂错名字反序列化会失败
+    if (spec.body?.length) {
+      inputs[spec.t === "controls_repeat_ext" ? "DO" : "DO0"] = { block: buildDemoChain(spec.body, `${id}b`) };
+    }
+    if (Object.keys(inputs).length) block.inputs = inputs;
+    if (!first) {
+      first = block;
+    } else {
+      cursor.next = { block };
+    }
+    cursor = block;
+  });
+  return first;
+}
+
+/** 返回本关示范程序的序列化 JSON（无示范定义时返回 null）。 */
+export function demoProgramFor(missionOrId) {
+  const mission = typeof missionOrId === "string"
+    ? findBlocklyMission(missionOrId)
+    : normalizeMission(missionOrId);
+  const specs = DEMO_PROGRAM_SPECS[mission?.missionCode || mission?.id];
+  if (!specs?.length) return null;
+  return {
+    blocks: {
+      languageVersion: 0,
+      blocks: [{
+        type: "k12_when_start", id: "demo-start", x: 40, y: 40, deletable: false,
+        next: { block: buildDemoChain(specs, "d") },
+      }],
+    },
+  };
+}

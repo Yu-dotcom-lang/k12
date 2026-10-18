@@ -231,6 +231,14 @@ export const speechApi = {
   }),
 };
 
+/** AI 组题：按主题/课文即时出选择题，无需教师发布。 */
+export const quizApi = {
+  generate: ({ topic, stage = "lower_primary", count = 5, sourceText } = {}) => api("/api/v1/agents/quiz/generate", {
+    method: "POST",
+    body: JSON.stringify({ topic, stage, count, sourceText: sourceText || undefined }),
+  }),
+};
+
 export const coursewareApi = {
   listPublished: () => api("/api/v1/agents/courseware/published"),
   getPublished: (coursewareId) => api(`/api/v1/agents/courseware/published/${encodeURIComponent(coursewareId)}`),
