@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   BookOpenText,
   CheckCircle2,
   Code2,
@@ -9,6 +10,7 @@ import {
   Mic,
   Send,
   Square,
+  Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { agentsApi, practiceApi, profileApi, speechApi, teachingResourcesApi } from "../api/client.js";
@@ -19,6 +21,7 @@ import { MarkdownContent } from "./MarkdownContent.jsx";
 import { TeachingSteps } from "./TeachingSteps.jsx";
 import { topicCodeForId } from "../data/teachingTopics.js";
 import { primaryEmojiFor, primaryPictureFor } from "../data/primaryChatPictures.js";
+import { PLAYABLE_CODES } from "../pages/ChallengePage.jsx";
 
 export { TEACHING_TOPICS, TOPIC_CATEGORIES, topicsByCategory } from "../data/teachingTopics.js";
 
@@ -313,7 +316,7 @@ function buildHint(question, level) {
   return `答案是 ${correctLetter}。${question.explanation || "再读一遍解析，加深印象。"}`;
 }
 
-function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false }) {
+function PracticeQuiz({ artifact, runId, onPracticeRecorded, onOpenChallenge, illustrated = false }) {
   const payload = artifact?.payload;
   const questions = Array.isArray(payload?.questions) ? payload.questions : [];
   const [answers, setAnswers] = useState({});
@@ -463,7 +466,14 @@ function PracticeQuiz({ artifact, runId, onPracticeRecorded, illustrated = false
           {saving ? "正在记录" : "提交答案"}
         </button>
       ) : (
-        <footer>本次练习已记录。继续提问，助教会参考你的薄弱点调整讲解。</footer>
+        <footer>
+          本次练习已记录，成绩计入挑战积分与排行榜。
+          {onOpenChallenge && (
+            <button className="text-button quiz-challenge-link" type="button" onClick={onOpenChallenge}>
+              去知识闯关<ArrowRight size={13} />
+            </button>
+          )}
+        </footer>
       )}
       {error && <p className="quiz-feedback">{error}</p>}
       {!submitted && <footer>提交后会保存练习结果，不计入作业或考试成绩。</footer>}
@@ -541,6 +551,7 @@ export function TeachingAssistantChat({
   onRequireLogin,
   onPracticeRecorded,
   navigate,
+  onOpenChallenge,
   variant = "page",
   activeTopicId,
   onTopicChange,
@@ -575,6 +586,8 @@ export function TeachingAssistantChat({
   const stageCode = stageCodes[profile?.schoolStage];
   const isPage = variant === "page";
   const isLowerPrimary = agentCode === "lower-primary-tutor";
+  // 编程实验只属于初高中学段：小学（含高年级）不出现「打开编程实验」入口
+  const isTeenStage = profile?.schoolStage === "JUNIOR_HIGH" || profile?.schoolStage === "SENIOR_HIGH";
 
   useEffect(() => {
     const pane = conversationRef.current;
@@ -789,6 +802,7 @@ export function TeachingAssistantChat({
               gameArtifact,
               coursewareArtifact,
               topicTitle: metadata.topic || null,
+              topicCode: metadata.topicCode || null,
               nextTopics: metadata.knowledgeGraph?.nextTopics || [],
               weakPoints: metadata.weakPoints || [],
               runId: turn.runId,
@@ -821,7 +835,7 @@ export function TeachingAssistantChat({
     onTopicChange?.(null);
   }
 
-  async function ask(text, { topicId, topicCode, preferDeterministic = false, speakReply: shouldSpeak = false } = {}) {
+  async function ask(text, { topicId, topicCode, preferDeterministic = false, requirePractice = false, speakReply: shouldSpeak = false } = {}) {
     const content = text.trim();
     if (!content || restoring || sending) return;
     if (!session) {
@@ -850,8 +864,9 @@ export function TeachingAssistantChat({
           stage: stageCode,
           grade: formatGrade(profile),
           textbook: profile?.textbook || undefined,
-          preferredInteraction: ["对话问答"],
+          preferredInteraction: requirePractice ? ["小测", "互动练习"] : ["对话问答"],
           preferDeterministic: Boolean(preferDeterministic),
+          requirePracticeArtifact: requirePractice || undefined,
           topicCode: turnTopicCode,
         },
       });
@@ -877,6 +892,7 @@ export function TeachingAssistantChat({
         gameArtifact,
         coursewareArtifact,
         topicTitle: metadata.topic || null,
+        topicCode: metadata.topicCode || null,
         nextTopics: metadata.knowledgeGraph?.nextTopics || [],
         weakPoints: metadata.weakPoints || [],
         runId: run.runId,
@@ -932,6 +948,16 @@ export function TeachingAssistantChat({
     sessionStorage.setItem("k12-codelab-example", exampleId);
     navigate?.("code-lab");
     window.dispatchEvent(new CustomEvent("k12-open-codelab", { detail: { exampleId } }));
+  }
+
+  // 讲解完一个知识点后的一键闯关：让助教当场出一组小测（requirePracticeArtifact 确保出题）。
+  // topicCode 一并带上：自由文本再次匹配可能落空，带码走 _topic_for_state 必中目录主题。
+  function askChallengeQuiz(topicTitle, topicCode) {
+    ask(`给我来一组「${topicTitle}」的闯关小测，答完当场判分并讲解析。`, {
+      topicCode,
+      preferDeterministic: true,
+      requirePractice: true,
+    });
   }
 
   const statusBusy = restoring || sending;
@@ -1070,10 +1096,11 @@ export function TeachingAssistantChat({
                   artifact={message.gameArtifact}
                   runId={message.runId}
                   onPracticeRecorded={onPracticeRecorded}
+                  onOpenChallenge={onOpenChallenge}
                   illustrated={isLowerPrimary}
                 />
               )}
-              {message.role === "assistant" && !isLowerPrimary && (
+              {message.role === "assistant" && !isLowerPrimary && isTeenStage && (
                 <MultimodalNextSteps
                   animationArtifact={message.animationArtifact}
                   onOpenCodeLab={openCodeLab}
@@ -1089,6 +1116,13 @@ export function TeachingAssistantChat({
               )}
               {message.role === "assistant" && message.coursewareArtifact && (
                 <CoursewarePlayer artifact={message.coursewareArtifact} />
+              )}
+              {message.role === "assistant" && index === lastAssistantIndex && !statusBusy
+                && message.topicCode && PLAYABLE_CODES.has(message.topicCode) && !message.gameArtifact && (
+                <button className="challenge-convert" type="button" onClick={() => askChallengeQuiz(message.topicTitle, message.topicCode)}>
+                  <Zap size={14} />
+                  闯关挑战：来一组「{message.topicTitle}」小测，当场判分
+                </button>
               )}
             </div>
           </div>

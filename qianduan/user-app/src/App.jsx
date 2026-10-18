@@ -8,6 +8,7 @@ import { AiStudioPage } from "./pages/AiStudioPage.jsx";
 import { CodeLabPage } from "./pages/CodeLabPage.jsx";
 import { CatRecognitionLessonPage } from "./pages/CatRecognitionLessonPage.jsx";
 import { CatFindingLessonPage } from "./pages/CatFindingLessonPage.jsx";
+import { ChallengePage } from "./pages/ChallengePage.jsx";
 import { CourseDetailPage } from "./pages/CourseDetailPage.jsx";
 import { CoursesPage } from "./pages/CoursesPage.jsx";
 import { CoursewaresPage } from "./pages/CoursewaresPage.jsx";
@@ -37,7 +38,15 @@ import {
   validateRegisterForm,
 } from "./utils/passwordValidation.js";
 
-const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "find-cat-lesson", "coursewares", "diagnostic"]);
+const listPages = new Set(["home", "ai-studio", "picture-books", "courses", "tasks", "challenge", "visual-code-lab", "code-lab", "leaderboard", "progress", "cat-lesson", "find-cat-lesson", "coursewares", "diagnostic"]);
+// 通用页：不属于某一体验的导航，但两种体验下都允许直达/刷新（否则带档案用户一刷新就被弹回首页）。
+const universalPages = new Set(["cat-lesson", "find-cat-lesson", "diagnostic"]);
+function pagesAllowedFor(experience) {
+  return new Set([
+    ...(experienceNavigation[experience] || []).map(([id]) => id),
+    ...universalPages,
+  ]);
+}
 const VisualCodeLabPage = lazy(() => import("./pages/VisualCodeLabPage.jsx")
   .then((module) => ({ default: module.VisualCodeLabPage })));
 
@@ -69,7 +78,9 @@ function parseRoute() {
     return { page: "home", nav: "home", courseId: null, chapterId: null, homeworkId: null, openProfile: true };
   }
   if (listPages.has(root)) {
-    return { page: root, nav: root === "code-lab" ? "visual-code-lab" : root, courseId: null, chapterId: null, homeworkId: null };
+    // nav 即页面 id：学段闸门（pagesAllowedFor）负责把不允许的页面弹回首页
+    // （小学无编程实验、初高中无积木实验室）
+    return { page: root, nav: root, courseId: null, chapterId: null, homeworkId: null };
   }
   return { page: "home", nav: "home", courseId: null, chapterId: null, homeworkId: null };
 }
@@ -299,8 +310,7 @@ export function App() {
           const profileExperience = experienceForSchoolStage(learning.schoolStage);
           storeExperience(profileExperience);
           setExperience(profileExperience);
-          const allowedPages = new Set((experienceNavigation[profileExperience] || []).map(([id]) => id));
-          if (!allowedPages.has(route.nav)) navigate("home");
+          if (!pagesAllowedFor(profileExperience).has(route.nav)) navigate("home");
         }
       })
       .catch(() => {
@@ -315,9 +325,14 @@ export function App() {
     if (!Object.values(EXPERIENCE).includes(nextExperience)) return;
     storeExperience(nextExperience);
     setExperience(nextExperience);
-    const allowedPages = new Set((experienceNavigation[nextExperience] || []).map(([id]) => id));
-    if (!allowedPages.has(route.nav)) navigate("home");
+    if (!pagesAllowedFor(nextExperience).has(route.nav)) navigate("home");
   }
+
+  // 学段导航闸门：直链/刷新到本学段没有的页面时回首页
+  // （小学无「编程实验」，初高中无积木「图形编程」）
+  useEffect(() => {
+    if (!pagesAllowedFor(experience).has(route.nav)) navigate("home");
+  }, [experience, route.nav]);
 
   function navigate(nextPage) {
     window.location.hash = `#${nextPage}`;
@@ -393,12 +408,20 @@ export function App() {
         schoolStage={learningProfile?.schoolStage}
       />,
       "picture-books": <PictureBooksPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} learningProfile={learningProfile} />,
-      coursewares: <CoursewaresPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
+      coursewares: <CoursewaresPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} learningProfile={learningProfile} />,
       "cat-lesson": (
         <CatRecognitionLessonPage
           session={session}
           requireLogin={requireLogin}
           navigate={navigate}
+          onAskTopic={(topic) => {
+            setAssistantDraft({
+              prompt: `请带我学习「${topic?.title || "图像分类"}」，并给我一个适合当前学段的分步练习。`,
+              topicId: topicIdForKnowledgeCode(topic?.code),
+              preferDeterministic: false,
+            });
+            requireLogin(() => navigate("ai-studio"));
+          }}
           onContinue={(nextTopic) => {
             setAssistantDraft({
               prompt: `我刚完成了“AI 为什么能认出小猫”。请继续讲解「${nextTopic?.title || "图像中的物体"}」，先说明为什么推荐它，再给我一个适合小学低年级的小任务。`,
@@ -447,6 +470,15 @@ export function App() {
           requireLogin(() => navigate("ai-studio"));
         }} />,
       tasks: <TasksPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />,
+      challenge: (
+        <ChallengePage
+          session={session}
+          requireLogin={requireLogin}
+          navigate={navigate}
+          experience={experience}
+          schoolStage={learningProfile?.schoolStage}
+        />
+      ),
       "visual-code-lab": (
         <Suspense fallback={<div className="page page-loading">正在准备图形化实验...</div>}>
           <VisualCodeLabPage session={session} requireLogin={requireLogin} navigate={navigate} experience={experience} />

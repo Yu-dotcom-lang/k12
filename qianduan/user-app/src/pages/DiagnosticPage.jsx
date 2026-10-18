@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, ClipboardCheck, LoaderCircle, RefreshCcw, Sparkles, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardCheck, Eye, LoaderCircle, RefreshCcw, Sparkles, Target, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { diagnosticsApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
@@ -32,6 +32,7 @@ export function DiagnosticPage({ session, requireLogin, navigate, experience = E
   const [interests, setInterests] = useState([]);
   const [result, setResult] = useState(null);
   const [existing, setExisting] = useState(null);
+  const [viewExisting, setViewExisting] = useState(true); // intro 阶段有历史画像时，默认直接展示它
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -113,7 +114,7 @@ export function DiagnosticPage({ session, requireLogin, navigate, experience = E
           <button className="button primary" type="button" onClick={() => requireLogin()}>立即登录</button>
         </section>
       ) : phase === "result" && result ? (
-        <ResultView result={result} primary={primary} navigate={navigate} onRetry={() => { setResult(null); setPhase("intro"); }} />
+        <ResultView result={result} primary={primary} navigate={navigate} onRetry={() => { setResult(null); setViewExisting(false); setPhase("intro"); }} />
       ) : phase === "paper" ? (
         <section className="diagnostic-workspace">
           <div className="diagnostic-questions">
@@ -157,12 +158,20 @@ export function DiagnosticPage({ session, requireLogin, navigate, experience = E
             <p className="diagnostic-note">提交后立即生成画像，并写入学习证据；诊断是形成性引导，不计入正式成绩。</p>
           </aside>
         </section>
+      ) : phase === "intro" && existing && viewExisting ? (
+        // 已有画像：默认直接回看历史结果（数据与刚提交完完全同构），重新诊断按钮进入 intro 卡。
+        <ResultView result={existing} primary={primary} navigate={navigate} history onRetry={() => setViewExisting(false)} />
       ) : (
         <section className="diagnostic-intro-card">
           {existing && (
-            <p className="diagnostic-existing">
-              <CheckCircle2 size={15} />你已完成过一次诊断（{(existing.scorePercent ?? 0)} 分 · {formatDateTime(existing.createdTime)}），可以重新做更新画像。
-            </p>
+            <>
+              <p className="diagnostic-existing">
+                <CheckCircle2 size={15} />你已完成过一次诊断（{(existing.scorePercent ?? 0)} 分 · {formatDateTime(existing.createdTime)}），可以重新做更新画像。
+              </p>
+              <button className="text-button diagnostic-review" type="button" onClick={() => setViewExisting(true)}>
+                <Eye size={14} />查看上次画像
+              </button>
+            </>
           )}
           <h2>{primary ? "先选一选你在哪个学段" : "选择当前学段"}</h2>
           <div className="diagnostic-stage-row">
@@ -189,13 +198,13 @@ export function DiagnosticPage({ session, requireLogin, navigate, experience = E
   );
 }
 
-function ResultView({ result, primary, navigate, onRetry }) {
+function ResultView({ result, primary, navigate, onRetry, history = false }) {
   return (
     <section className="diagnostic-result">
       <div className="diagnostic-result-banner">
         <span><TrendingUp size={22} /></span>
         <div>
-          <small>我的学习画像 · {STAGE_OPTIONS.find(([value]) => value === result.stage)?.[1] || result.stage}</small>
+          <small>我的学习画像 · {STAGE_OPTIONS.find(([value]) => value === result.stage)?.[1] || result.stage}{history ? ` · ${formatDateTime(result.createdTime)}` : ""}</small>
           <h2>{primary
             ? `答对了 ${result.correctCount}/${result.totalQuestions} 题，小智认识你啦！`
             : `总体掌握 ${result.scorePercent}%（答对 ${result.correctCount}/${result.totalQuestions}）`}</h2>

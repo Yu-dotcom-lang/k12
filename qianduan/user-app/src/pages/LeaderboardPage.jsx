@@ -44,11 +44,11 @@ export function LeaderboardPage({ session, requireLogin, experience = EXPERIENCE
         <LeaderboardHero experience={experience} />
         <AuthGateShowcase
           title="登录后查看排行榜"
-          description="排行榜根据课程章节学习进度生成，只展示匿名编号和积分。"
+          description="排行榜积分 = 课程章节进度 + 知识闯关积分，只展示匿名编号和积分。"
           features={[
-            { icon: Target, title: "章节进度换积分", text: "报名课程的章节最高进度决定学习积分。" },
+            { icon: Target, title: "章节进度换积分", text: "报名课程的章节最高进度决定课程积分。" },
+            { icon: Flame, title: "闯关再拿一笔", text: "去知识闯关答题，成绩直接换算成挑战积分。" },
             { icon: ShieldCheck, title: "匿名编号展示", text: "不公开昵称和头像，保护个人隐私。" },
-            { icon: Flame, title: "坚持就会上升", text: "每天进步一点，名次自然往上走。" },
           ]}
           onLogin={() => requireLogin()}
         />
@@ -71,7 +71,7 @@ export function LeaderboardPage({ session, requireLogin, experience = EXPERIENCE
         <section className="empty-state">
           <img className="leaderboard-empty-mascot" src={pageVisual} alt="" />
           <h2>排行榜还没有数据</h2>
-          <p>报名课程并完成章节后，学习积分会出现在这里。</p>
+          <p>报名课程、完成章节或去知识闯关答题，积分会出现在这里。</p>
         </section>
       )}
 
@@ -97,7 +97,7 @@ export function LeaderboardPage({ session, requireLogin, experience = EXPERIENCE
               </article>
             ))}
           </section>
-          <p className="leaderboard-note">排行榜大约每隔几分钟更新一次。</p>
+          <p className="leaderboard-note">积分 = 课程章节进度 + 知识闯关积分；排行榜大约每隔几分钟更新一次，闯关后稍等片刻就会上榜。</p>
         </>
       )}
     </div>
@@ -118,7 +118,7 @@ function LeaderboardHero({ experience, children }) {
       experience={experience}
       eyebrow={primary ? "成长排行" : "学习排行"}
       title={primary ? "每一次坚持都值得一颗星" : "用持续学习积累进步"}
-      description={primary ? "完成课程和挑战可以积累成长积分，和昨天的自己比一比。" : "积分来自已报名课程的章节最高进度，不代表考试成绩。"}
+      description={primary ? "完成课程和闯关挑战都能积累成长积分，和昨天的自己比一比。" : "积分 = 已报名课程的章节进度 + 知识闯关积分，不代表考试成绩。"}
       imageKey="progress"
     >
       {children && <div className="leaderboard-hero-actions">{children}</div>}

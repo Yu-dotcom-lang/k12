@@ -109,7 +109,6 @@ export const coursesApi = {
   }),
   page: (filters = {}) => api(`/api/v1/learning/courses/page?${query(filters)}`),
   history: (limit = 10) => api(`/api/v1/learning/history/me?${query({ limit })}`),
-  events: (days = 30, limit = 100) => api(`/api/v1/learning/events/me?${query({ days, limit })}`),
   get: (id) => api(`/api/v1/learning/courses/${id}`),
   chapters: (courseId) => api(`/api/v1/learning/courses/${courseId}/chapters`),
   chapter: (courseId, chapterId) => api(`/api/v1/learning/courses/${courseId}/chapters/${chapterId}`),
@@ -229,14 +228,6 @@ export const speechApi = {
   recognize: (audioBase64, contentType = "audio/wav") => api("/api/v1/agents/speech/recognize", {
     method: "POST",
     body: JSON.stringify({ audioBase64, contentType }),
-  }),
-};
-
-/** AI 组题：按主题/课文即时出选择题，无需教师发布。 */
-export const quizApi = {
-  generate: ({ topic, stage = "lower_primary", count = 5, sourceText } = {}) => api("/api/v1/agents/quiz/generate", {
-    method: "POST",
-    body: JSON.stringify({ topic, stage, count, sourceText: sourceText || undefined }),
   }),
 };
 

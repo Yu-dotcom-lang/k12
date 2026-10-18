@@ -4,7 +4,7 @@ import { coursewareApi } from "../api/client.js";
 import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { COURSEWARE_MIME, CoursewarePlayer } from "../components/CoursewarePlayer.jsx";
-import { EXPERIENCE } from "../experience/experience.js";
+import { EXPERIENCE, experienceForSchoolStage } from "../experience/experience.js";
 
 const STAGE_LABELS = {
   lower_primary: "小学低年级",
@@ -13,8 +13,16 @@ const STAGE_LABELS = {
   high_school: "高中",
 };
 
-/** 学生端已发布课件列表：点开即进入互动课件播放器。 */
-export function CoursewaresPage({ session, requireLogin, experience = EXPERIENCE.TEEN }) {
+// 课件学段与学习档案学段的对应关系：有档案且与当前体验匹配时只看本学段，无档案（评委浏览）分组全展示。
+const COURSEWARE_STAGE_ORDER = [
+  { key: "lower_primary", label: "小学低年级", profileStage: "PRIMARY_LOWER" },
+  { key: "upper_primary", label: "小学高年级", profileStage: "PRIMARY_UPPER" },
+  { key: "middle_school", label: "初中", profileStage: "JUNIOR_HIGH" },
+  { key: "high_school", label: "高中", profileStage: "SENIOR_HIGH" },
+];
+
+/** 学生端已发布课件列表：按学段分组书架，点开即进入互动课件播放器。 */
+export function CoursewaresPage({ session, requireLogin, experience = EXPERIENCE.TEEN, learningProfile }) {
   const primary = experience === EXPERIENCE.PRIMARY;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +60,21 @@ export function CoursewaresPage({ session, requireLogin, experience = EXPERIENCE
       setError(err.message || "课件加载失败，请稍后再试");
     }
   }
+
+  const profileStage = learningProfile?.schoolStage;
+  const profileMatches = Boolean(profileStage && experienceForSchoolStage(profileStage) === experience);
+  const stageGroups = COURSEWARE_STAGE_ORDER
+    .filter((group) => !profileMatches || group.profileStage === profileStage)
+    .map((group) => ({ ...group, items: items.filter((item) => item.stage === group.key) }))
+    .filter((group) => group.items.length);
+  // 档案学段暂无课件时不留空书架：提示"整理中"并展示其他学段的已发布课件（如实标注学段）。
+  const showOtherStages = profileMatches && stageGroups.length === 0;
+  const visibleGroups = showOtherStages
+    ? COURSEWARE_STAGE_ORDER
+      .map((group) => ({ ...group, items: items.filter((item) => item.stage === group.key) }))
+      .filter((group) => group.items.length)
+    : stageGroups;
+  const generalItems = items.filter((item) => !COURSEWARE_STAGE_ORDER.some((group) => group.key === item.stage));
 
   if (active) {
     return (
@@ -105,24 +128,65 @@ export function CoursewaresPage({ session, requireLogin, experience = EXPERIENCE
           <p>老师还没有发布课件，先去别处逛逛吧～</p>
         </div>
       ) : !error && items.length > 0 && (
-        <div className="courseware-grid">
-          {items.map((item) => (
-            <article className="courseware-card" key={item.coursewareId}>
-              <div className="courseware-card-icon"><Presentation size={22} /></div>
-              <h2>{item.title}</h2>
-              <p className="courseware-card-meta">
-                {STAGE_LABELS[item.stage] || "全学段"} · {item.slideCount} 页
-              </p>
-              <button
-                className="button primary"
-                type="button"
-                onClick={() => openCourseware(item)}
-              >
-                开始学习 <ChevronRight size={15} />
-              </button>
-            </article>
-          ))}
-        </div>
+        <>
+          {showOtherStages && (
+            <div className="stage-scope-banner" role="status">
+              <span><BookOpenCheck size={17} /></span>
+              <div><strong>「{STAGE_LABELS[COURSEWARE_STAGE_ORDER.find((group) => group.profileStage === profileStage)?.key] || "本学段"}」课件整理中</strong><p>先看其他学段已发布的课件，老师发布新课件后会出现在这里。</p></div>
+            </div>
+          )}
+          {visibleGroups.map((group) => {
+            const strictMode = profileMatches && !showOtherStages;
+            return (
+            <section className="courseware-stage-group" key={group.key} aria-label={`${group.label}课件`}>
+              <header className="courseware-stage-head">
+                <p className="eyebrow">{strictMode ? group.label : `${group.label}阶段`}</p>
+                <h2>{strictMode ? "本学段课件书架" : `${group.label} · 适合这一学段的课件`}</h2>
+                <small>{group.items.length} 份</small>
+              </header>
+              <div className="courseware-grid">
+                {group.items.map((item) => (
+                  <article className="courseware-card" key={item.coursewareId}>
+                    <div className="courseware-card-icon"><Presentation size={22} /></div>
+                    <h2>{item.title}</h2>
+                    <p className="courseware-card-meta">
+                      {STAGE_LABELS[item.stage] || "全学段"} · {item.slideCount} 页
+                    </p>
+                    <button
+                      className="button primary"
+                      type="button"
+                      onClick={() => openCourseware(item)}
+                    >
+                      开始学习 <ChevronRight size={15} />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+            );
+          })}
+          {generalItems.length > 0 && (
+            <section className="courseware-stage-group" aria-label="全学段课件">
+              <header className="courseware-stage-head">
+                <p className="eyebrow">全学段</p>
+                <h2>适合所有学段的课件</h2>
+                <small>{generalItems.length} 份</small>
+              </header>
+              <div className="courseware-grid">
+                {generalItems.map((item) => (
+                  <article className="courseware-card" key={item.coursewareId}>
+                    <div className="courseware-card-icon"><Presentation size={22} /></div>
+                    <h2>{item.title}</h2>
+                    <p className="courseware-card-meta">全学段 · {item.slideCount} 页</p>
+                    <button className="button primary" type="button" onClick={() => openCourseware(item)}>
+                      开始学习 <ChevronRight size={15} />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
       {!loading && !error && items.length > 0 && (
         <footer className="auth-gate-features courseware-shelf-note">

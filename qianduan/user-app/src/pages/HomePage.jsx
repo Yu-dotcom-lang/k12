@@ -1,20 +1,81 @@
 import { ArrowRight, BarChart3, BookOpen, ChevronLeft, ChevronRight, ClipboardCheck, Eye, FlaskConical, Gamepad2, LoaderCircle, MessageCircle, Play, Send, Sparkles, Target } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { coursesApi, diagnosticsApi } from "../api/client.js";
 import { DailyLearningPlan } from "../components/DailyLearningPlan.jsx";
+import { HomeMainline } from "../components/HomeMainline.jsx";
 import { LearningRhythm } from "../components/LearningRhythm.jsx";
-import { courses as fallbackCourses } from "../data/learningData.js";
-import { courseMatchesLearningScope, EXPERIENCE } from "../experience/experience.js";
+import { courses as fallbackCourses, realShowcaseCourses } from "../data/learningData.js";
+import { courseMatchesLearningScope, experienceForSchoolStage, EXPERIENCE } from "../experience/experience.js";
 import { visualsFor } from "../experience/visualAssets.js";
 
 const fallbackImageFor = (course, index) => fallbackCourses.find((item) => item.subject === course.subject)?.image
   || fallbackCourses[index % fallbackCourses.length].image;
 
-export function HomePage({ session, displayName, navigate, requireLogin, onAskTopic, experience = EXPERIENCE.TEEN, schoolStage }) {
+const toShowcaseCard = (course, index) => ({
+  id: course.id,
+  title: course.title,
+  subject: course.subject,
+  grade: course.gradeLevel || course.grade,
+  next: course.description?.trim()?.slice(0, 28) || course.next || "打开课程查看章节",
+  image: course.coverUrl || course.image || fallbackImageFor(course, index),
+});
+
+// 学段→年级文案的粗判（真实课程 gradeLevel 就是「初中/高中」等文案，正则做兼容）。
+const courseStageOf = (grade) => {
+  const value = String(grade || "");
+  if (/初中|JUNIOR|MIDDLE/i.test(value)) return "初中";
+  if (/高中|SENIOR/i.test(value)) return "高中";
+  return null;
+};
+
+// 初中/高中按培养定位分组展示：初中=Python 编程基础与简单算法；高中=机器学习、神经网络进阶。
+const TEEN_STAGE_GROUPS = [
+  { key: "junior", stage: "JUNIOR_HIGH", grade: "初中", eyebrow: "初中阶段", title: "Python 编程基础与简单算法", note: "从数据处理入门，理解分类、训练等机器学习核心概念。" },
+  { key: "senior", stage: "SENIOR_HIGH", grade: "高中", eyebrow: "高中阶段", title: "机器学习与神经网络进阶", note: "围绕真实问题完成数据准备、模型训练、评价与项目报告。" },
+];
+
+/** 推荐课程区（带自己的横向滚动条）：首页小学单条 + 中学端按学段分组复用。 */
+function CourseShowcaseSection({ eyebrow, title, note, loading, items, primary, onOpen }) {
   const railRef = useRef(null);
-  const [recommended, setRecommended] = useState([]);
-  const [loading, setLoading] = useState(Boolean(session));
   const scrollCourses = (direction) => railRef.current?.scrollBy({ left: direction * 380, behavior: "smooth" });
+  return (
+    <section className="home-section course-showcase">
+      <header className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{note}</p></div><div className="carousel-actions"><button className="icon-button" type="button" title="上一组课程" onClick={() => scrollCourses(-1)}><ChevronLeft size={18} /></button><button className="icon-button" type="button" title="下一组课程" onClick={() => scrollCourses(1)}><ChevronRight size={18} /></button></div></header>
+      {loading ? (
+        <div className="empty-state" style={{ minHeight: 180 }}><LoaderCircle className="spin" size={22} /><p>正在加载推荐课程</p></div>
+      ) : !items.length ? (
+        <div className="empty-state" style={{ minHeight: 180 }}><BookOpen size={22} /><p>{primary ? "这个学段的课程正在整理中，先去问问小智吧。" : "该学段课程整理中，可先使用 AI 学习台。"}</p></div>
+      ) : (
+        <div className="visual-course-rail" ref={railRef}>{items.map((course) => (
+          <article className="visual-course-card" key={course.id || course.title}>
+            <img src={course.image} alt={`${course.title}课程插画`} loading="lazy" />
+            <div>
+              <span>{course.subject} · {course.grade}</span>
+              <h3>{course.title}</h3>
+              {primary ? (
+                <button className="text-button visual-course-play" type="button" onClick={() => onOpen(course)}>
+                  <Play size={15} />点开就能学
+                </button>
+              ) : (
+                <>
+                  <p>下一节：{course.next}</p>
+                  <button type="button" onClick={() => onOpen(course)}>
+                    进入课程<ArrowRight size={15} />
+                  </button>
+                </>
+              )}
+            </div>
+          </article>
+        ))}</div>
+      )}
+    </section>
+  );
+}
+
+export function HomePage({ session, displayName, navigate, requireLogin, onAskTopic, experience = EXPERIENCE.TEEN, schoolStage }) {
+  const [recommended, setRecommended] = useState([]);
+  const [historyItems, setHistoryItems] = useState([]);
+  const [loading, setLoading] = useState(Boolean(session));
 
   useEffect(() => {
     if (!session) {
@@ -38,23 +99,47 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
     return () => { active = false; };
   }, [session]);
 
+  // 学习主线数据：最近在学、还没学完的课程 → 「继续今天的探索」的目的地。
+  useEffect(() => {
+    if (!session) {
+      setHistoryItems([]);
+      return undefined;
+    }
+    let active = true;
+    coursesApi.history(10)
+      .then((value) => { if (active) setHistoryItems(value?.items || []); })
+      .catch(() => { if (active) setHistoryItems([]); });
+    return () => { active = false; };
+  }, [session]);
+
+  const continueTarget = useMemo(() => {
+    const inProgress = historyItems.filter((item) => Number(item.progressPercent || 0) < 100);
+    return inProgress.find((item) => Number(item.progressPercent || 0) > 0) || null;
+  }, [historyItems]);
+
   const scopedRecommendations = recommended.filter((course) => (
     courseMatchesLearningScope(course.gradeLevel, schoolStage, experience)
   ));
-  const scopedFallbackCourses = fallbackCourses.filter((course) => (
+  // 推荐接口为空时的兜底不再是虚构示例，而是平台真实发布的课程（realShowcaseCourses 带真实课程 id）。
+  const scopedShowcase = realShowcaseCourses.filter((course) => (
     courseMatchesLearningScope(course.grade, schoolStage, experience)
   ));
-  const showcaseSource = scopedRecommendations.length ? scopedRecommendations : scopedFallbackCourses;
-  const showcase = scopedRecommendations.length
-    ? showcaseSource.map((course, index) => ({
-      id: course.id,
-      title: course.title,
-      subject: course.subject,
-      grade: course.gradeLevel,
-      next: course.description?.trim()?.slice(0, 28) || "打开课程查看章节",
-      image: course.coverUrl || fallbackImageFor(course, index),
-    }))
-    : showcaseSource;
+  const usingShowcaseFallback = !scopedRecommendations.length;
+  const showcase = (usingShowcaseFallback ? scopedShowcase : scopedRecommendations).map(toShowcaseCard);
+  // 中学端按学段分两轨：初高中档案只看对应组；小学档案跨端预览与无档案（评委浏览）一样两组都展示，
+  // 否则小学账号切到中学端会整区清空、误显示「课程整理中」（平台其实有已发布的初高中课程）。
+  const profileExperience = schoolStage ? experienceForSchoolStage(schoolStage) : null;
+  const teenStageGroups = TEEN_STAGE_GROUPS
+    .filter((group) => !schoolStage || profileExperience !== EXPERIENCE.TEEN || schoolStage === group.stage)
+    .map((group) => {
+      const recs = scopedRecommendations.filter((course) => courseStageOf(course.gradeLevel) === group.grade);
+      // 推荐 ∪ 学段兜底（按 id 去重）：推荐接口只回 8 条，可能漏掉本学段的课程，合并后每组始终展示该学段全部真实课程。
+      const stageShowcase = scopedShowcase.filter((course) => course.grade === group.grade);
+      const picks = [...recs, ...stageShowcase.filter((course) => !recs.some((rec) => rec.id === course.id))];
+      return { ...group, usingFallback: !picks.length, items: picks.map(toShowcaseCard) };
+    })
+    .filter((group) => group.items.length);
+  const openShowcaseCourse = (course) => requireLogin(() => navigate(course.id ? `courses/${course.id}` : "courses"));
   const primary = experience === EXPERIENCE.PRIMARY;
   const visuals = visualsFor(experience);
 
@@ -66,6 +151,7 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         <strong>{primary ? "选一个喜欢的任务开始" : "保持清晰的学习节奏"}</strong>
         <button type="button" onClick={() => navigate("courses")}><BookOpen size={16} />{primary ? "探索课程" : "继续课程"}</button>
         <button type="button" onClick={() => navigate("tasks")}><ClipboardCheck size={16} />{primary ? "趣味任务" : "查看作业"}</button>
+        <button type="button" onClick={() => navigate("challenge")}><Gamepad2 size={16} />{primary ? "闯关乐园" : "知识闯关"}</button>
       </aside>
 
       <aside className="home-side-rail home-side-rail-right" aria-label="快捷学习工具">
@@ -117,10 +203,12 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
                 </div>
               </header>
               <div className="primary-quest-body">
-                <small>今日冒险主任务</small>
-                <strong>AI 为什么能认出小猫？</strong>
-                <p>像小侦探一样找线索，看看 AI 是怎么认出小猫的。</p>
-                <button className="primary-cta" type="button" onClick={() => navigate("cat-lesson")}>开始今天的冒险<ArrowRight size={18} /></button>
+                <small>{continueTarget ? "接着上次学" : "今日冒险主任务"}</small>
+                <strong>{continueTarget ? continueTarget.courseTitle : "AI 为什么能认出小猫？"}</strong>
+                <p>{continueTarget
+                  ? `已经完成 ${Math.round(Number(continueTarget.progressPercent || 0))}%，继续探险就能解锁新线索！`
+                  : "像小侦探一样找线索，看看 AI 是怎么认出小猫的。"}</p>
+                <button className="primary-cta" type="button" onClick={() => navigate(continueTarget ? `courses/${continueTarget.courseId}` : "cat-lesson")}>{continueTarget ? "继续今天的探险" : "开始今天的冒险"}<ArrowRight size={18} /></button>
               </div>
               <div className="primary-chips">
                 <button type="button" className="primary-chip primary-chip-red" onClick={() => navigate("picture-books")}>
@@ -154,8 +242,11 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
             <p className="eyebrow teen-stage-eyebrow">云端 AI 研究学院 · 图像分类专题</p>
             <h1>让 AI 看见你眼中的世界</h1>
             <p>研究问题：AI 是怎么从一张照片里认出小猫的？带着它去观察、实验，找到你自己的解释。</p>
+            {continueTarget && (
+              <p className="teen-stage-continue">上次学到《{continueTarget.courseTitle}》· 已完成 {Math.round(Number(continueTarget.progressPercent || 0))}%</p>
+            )}
             <div className="hero-actions">
-              <button className="button teen-cta" type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}><Play size={17} />开始今天的研究</button>
+              <button className="button teen-cta" type="button" onClick={() => (continueTarget ? requireLogin(() => navigate(`courses/${continueTarget.courseId}`)) : onAskTopic?.({ title: "图像分类", code: "image-classification" }))}><Play size={17} />{continueTarget ? "继续今天的探索" : "开始今天的研究"}</button>
               <button className="text-button teen-stage-alt" type="button" onClick={() => onAskTopic?.({ title: "图像分类", code: "image-classification" })}>先看特征动画<ArrowRight size={16} /></button>
             </div>
           </div>
@@ -166,7 +257,7 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
             </header>
             <ol className="research-path-steps">
               <li>
-                <button type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}>
+                <button type="button" onClick={() => onAskTopic?.({ title: "图像分类", code: "image-classification" })}>
                   <span className="research-step-no"><Eye size={16} />01</span>
                   <strong>观察</strong>
                   <small>看特征动画，找出 AI 认猫的线索</small>
@@ -199,45 +290,61 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
         </section>
       )}
 
+      <HomeMainline session={session} navigate={navigate} onAskTopic={onAskTopic} experience={experience} historyItems={historyItems} />
       <DiagnosticNudge session={session} navigate={navigate} primary={primary} />
       <DailyLearningPlan session={session} navigate={navigate} onAskTopic={onAskTopic} experience={experience} />
 
       {session && <LearningRhythm session={session} navigate={navigate} experience={experience} className="home-learning-rhythm" />}
 
-      <section className="home-section course-showcase">
-        <header className="section-heading"><div><p className="eyebrow">{primary ? "为你准备" : "推荐课程"}</p><h2>{primary ? "选择一场新的探索" : "从感兴趣的课程开始"}</h2><p>{session ? (primary ? "从故事、实验和图形化编程中认识人工智能。" : "覆盖学科基础、科学探究和编程创造。") : "登录后可查看平台已发布课程推荐。"}</p></div><div className="carousel-actions"><button className="icon-button" type="button" title="上一组课程" onClick={() => scrollCourses(-1)}><ChevronLeft size={18} /></button><button className="icon-button" type="button" title="下一组课程" onClick={() => scrollCourses(1)}><ChevronRight size={18} /></button></div></header>
-        {session && loading ? (
-          <div className="empty-state" style={{ minHeight: 180 }}><LoaderCircle className="spin" size={22} /><p>正在加载推荐课程</p></div>
-        ) : (
-          <div className="visual-course-rail" ref={railRef}>{showcase.map((course) => (
-            <article className="visual-course-card" key={course.id || course.title}>
-              <img src={course.image} alt={`${course.title}课程插画`} loading="lazy" />
-              <div>
-                <span>{course.subject} · {course.grade}</span>
-                <h3>{course.title}</h3>
-                {primary ? (
-                  <button className="text-button visual-course-play" type="button" onClick={() => (course.id ? requireLogin(() => navigate(`courses/${course.id}`)) : requireLogin())}>
-                    <Play size={15} />点开就能学
-                  </button>
-                ) : (
-                  <>
-                    <p>下一节：{course.next}</p>
-                    <button type="button" onClick={() => (course.id ? requireLogin(() => navigate(`courses/${course.id}`)) : requireLogin())}>
-                      进入课程<ArrowRight size={15} />
-                    </button>
-                  </>
-                )}
-              </div>
-            </article>
-          ))}</div>
-        )}
-      </section>
+      {primary ? (
+        <CourseShowcaseSection
+          eyebrow={usingShowcaseFallback ? "平台真实课程" : "为你准备"}
+          title={usingShowcaseFallback ? "这些都是能直接点开的真课" : "选择一场新的探索"}
+          note={usingShowcaseFallback
+            ? (session
+              ? "这个学段还没有为你生成的推荐，以下课程按学段挑选自平台已发布课程，点开即是正式课程内容。"
+              : "登录后会按你的学段和学习记录推荐；以下课程均为平台真实发布的课程。")
+            : "从故事、实验和图形化编程中认识人工智能。"}
+          loading={session && loading}
+          items={showcase}
+          primary
+          onOpen={openShowcaseCourse}
+        />
+      ) : teenStageGroups.length ? (
+        teenStageGroups.map((group) => (
+          <CourseShowcaseSection
+            key={group.key}
+            eyebrow={group.usingFallback ? `${group.eyebrow} · 真实课程` : group.eyebrow}
+            title={group.title}
+            note={group.usingFallback
+              ? (session
+                ? "这个学段还没有为你生成的推荐，以下课程按学段挑选自平台已发布课程，点开即是正式课程内容。"
+                : "登录后按学段推荐；以下均为平台真实发布的课程。")
+              : group.note}
+            loading={false}
+            items={group.items}
+            primary={false}
+            onOpen={openShowcaseCourse}
+          />
+        ))
+      ) : (
+        <CourseShowcaseSection
+          eyebrow="真实课程"
+          title="平台正在开放的真实课程"
+          note="该学段课程整理中，可先使用 AI 学习台或探索其他学段课程。"
+          loading={false}
+          items={[]}
+          primary={false}
+          onOpen={openShowcaseCourse}
+        />
+      )}
 
       {primary ? (
         <section className="home-section home-shortcuts">
           <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.ai} alt="" /><div><strong>问问小智</strong><p>有问题随时问，也可以听故事</p></div><ArrowRight size={18} /></button>
           <button type="button" onClick={() => navigate("courses")}><img src={visuals.courses} alt="" /><div><strong>继续探索</strong><p>回到上次学习的有趣知识</p></div><ArrowRight size={18} /></button>
           <button type="button" onClick={() => navigate("tasks")}><img src={visuals.tasks} alt="" /><div><strong>今日挑战</strong><p>完成老师布置的小任务</p></div><ArrowRight size={18} /></button>
+          <button type="button" onClick={() => navigate("challenge")}><img src={visuals.progress} alt="" /><div><strong>闯关乐园</strong><p>闯一关拿一颗星，积分上排行</p></div><ArrowRight size={18} /></button>
           <button type="button" onClick={() => navigate("progress")}><img src={visuals.progress} alt="" /><div><strong>成长记录</strong><p>看看新进步和获得的成绩</p></div><ArrowRight size={18} /></button>
         </section>
       ) : (
@@ -246,6 +353,7 @@ export function HomePage({ session, displayName, navigate, requireLogin, onAskTo
             <button type="button" onClick={() => requireLogin(() => navigate("cat-lesson"))}><img src={visuals.ai} alt="" /><div><small>观察</small><strong>特征动画</strong><p>看动画、分步看清 AI 提取了哪些特征。</p></div><ArrowRight size={18} /></button>
             <button type="button" onClick={() => navigate("code-lab")}><img src={visuals.code} alt="" /><div><small>实验</small><strong>分类实验</strong><p>亲手调整参数，跑出真实的分类结果。</p></div><ArrowRight size={18} /></button>
             <button type="button" onClick={() => requireLogin(() => navigate("ai-studio"))}><img src={visuals.science} alt="" /><div><small>解释</small><strong>解释判断</strong><p>和 AI 教练对话，说出并检验判断依据。</p></div><ArrowRight size={18} /></button>
+            <button type="button" onClick={() => navigate("challenge")}><img src={visuals.tasks} alt="" /><div><small>巩固</small><strong>知识闯关</strong><p>把学过的知识点闯成关，成绩计入排行榜。</p></div><ArrowRight size={18} /></button>
           </section>
           <section className="teen-challenge" aria-label="迁移挑战">
             <div>

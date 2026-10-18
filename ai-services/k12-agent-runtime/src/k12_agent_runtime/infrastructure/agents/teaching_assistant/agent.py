@@ -186,6 +186,15 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
         "小挑战来啦：找一找你身边最『聪明』的东西——它能帮我们做什么？"
         "把你的发现说给小智听吧！"
     )
+    # 「你是谁/你叫什么」这类身份问题不进教学图：硬套课程引导卡会答非所问。
+    _IDENTITY_PATTERN = re.compile(
+        r"你是谁|你叫什么|你的名字|怎么称呼你|你叫啥|你是机器人|你是AI|你是人工智能"
+        r"|你是真人|你是人吗|你是电脑|你是程序|你是小智|你能做什么|你会什么|你是干嘛|你是做什么"
+    )
+    _IDENTITY_ANSWER = (
+        "我是小智，一个陪你学 AI 的机器人朋友！"
+        "我会讲 AI 小故事、出图片小挑战，还能回答你的『十万个为什么』。"
+    )
     _STORY_SYSTEM = (
         "你是小学低年级的AI启蒙老师小智。请根据给定的课程内容讲一个儿童小故事："
         "主角是一个小朋友和一个可爱的机器人；不超过120字；全部使用口语化短句；"
@@ -212,6 +221,13 @@ class LowerPrimaryTutorAgent(TeachingAssistantAgent):
                 return courseware
         if "故事" in text and len(text) <= 30:
             return await self._story_turn(run_input, context)
+        # 身份/能力类元问题：短句直接自我介绍，不走课程引导。
+        if len(text) <= 30 and self._IDENTITY_PATTERN.search(text):
+            return self._guided_side_turn(
+                run_input, context, self._IDENTITY_ANSWER, False,
+                prompt="接下来想听故事、玩挑战，还是问问题呀？",
+                topic_title="小智是谁",
+            )
         if text in self._INVITE_TEXTS:
             return self._guided_side_turn(
                 run_input, context,

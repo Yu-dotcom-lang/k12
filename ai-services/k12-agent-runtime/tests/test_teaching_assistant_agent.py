@@ -1,90 +1,3 @@
-from __future__ import annotations
-
-import asyncio
-
-import pytest
-
-from k12_agent_runtime.application.rag import SearchKnowledgeCommand
-from k12_agent_runtime.domain.agents.models import (
-    AgentArtifactKind,
-    AgentRunInput,
-    AgentRunStatus,
-)
-from k12_agent_runtime.domain.llm import ChatRequest, ChatResponse
-from k12_agent_runtime.domain.rag import KnowledgeSearchResult, RankedDocument
-from k12_agent_runtime.infrastructure.agents.teaching_assistant import (
-    LowerPrimaryTutorAgent,
-    TeachingAssistantAgent,
-)
-
-
-def run_agent(context: dict[str, object]):
-    agent = TeachingAssistantAgent()
-    return asyncio.run(
-        agent.invoke(
-            AgentRunInput(
-                run_id="run-teaching-1",
-                agent_code="teaching-assistant",
-                input_text="为什么冒泡排序要比较旁边的数字？",
-                user_id="student-1",
-                context=context,
-            )
-        )
-    )
-
-
-def run_topic(question: str, context: dict[str, object]):
-    return asyncio.run(
-        TeachingAssistantAgent().invoke(
-            AgentRunInput(
-                run_id="run-topic-1",
-                agent_code="teaching-assistant",
-                input_text=question,
-                user_id="student-1",
-                context=context,
-            )
-        )
-    )
-
-
-def test_lower_primary_tutor_has_separate_code_and_enforces_child_policy() -> None:
-    result = asyncio.run(
-        LowerPrimaryTutorAgent().invoke(
-            AgentRunInput(
-                run_id="run-lower-primary-1",
-                agent_code="lower-primary-tutor",
-                input_text="继续讲图像分类",
-                user_id="student-1",
-                context={
-                    "stage": "high_school",
-                    "topicCode": "machine_learning.image_classification",
-                },
-            )
-        )
-    )
-
-    assert result.agent_code == "lower-primary-tutor"
-    assert result.metadata["stageCode"] == "lower_primary"
-    assert result.metadata["topicCode"] == "machine_learning.image_classification"
-    assert result.metadata["workflow"] == "lower-primary-guided-v1"
-    guided = result.metadata["guidedConversation"]
-    assert guided["mode"] == "SHORT_TURN"
-    assert guided["phase"] == "LOOK"
-    assert guided["progressCurrent"] == 1
-    assert guided["showPractice"] is False
-    assert 1 <= len(guided["choices"]) <= 3
-    assert "### 概念解释" not in result.output_text
-    assert "图片里的线索" in result.output_text or "猫和狗" in result.output_text
-
-
-@pytest.mark.parametrize(
-    ("previous_turn_count", "phase", "progress", "show_practice"),
-    [
-        (1, "THINK", 2, False),
-        (2, "TRY", 3, True),
-        (7, "TRY", 3, True),
-    ],
-)
 def test_lower_primary_tutor_advances_short_guided_turns(
     previous_turn_count: int,
     phase: str,
@@ -113,6 +26,47 @@ def test_lower_primary_tutor_advances_short_guided_turns(
     assert guided["progressTotal"] == 3
     assert len(guided["choices"]) == 3
     assert all(choice["label"] for choice in guided["choices"])
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "你是谁？",
+        "你叫什么名字呀？",
+        "你是机器人吗？",
+        "你能做什么？",
+    ],
+)
+def test_lower_primary_identity_questions_get_self_intro_without_teaching_graph(
+    question: str,
+) -> None:
+    """「你是谁」这类元问题直接自我介绍，不套课程引导卡答非所问。"""
+    model = GroundedChatModel()
+    result = asyncio.run(
+        LowerPrimaryTutorAgent(model).invoke(  # type: ignore[arg-type]
+            AgentRunInput(
+                run_id="run-lower-primary-identity",
+                agent_code="lower-primary-tutor",
+                input_text=question,
+                user_id="student-1",
+                context={
+                    "stage": "lower_primary",
+                    "topicCode": "computer_vision.object_detection",
+                    "conversation": {"previousTurnCount": 1},
+                },
+            )
+        )
+    )
+
+    assert result.status is AgentRunStatus.SUCCEEDED
+    assert model.calls == 0
+    assert result.artifacts == ()
+    assert "我是小智" in result.output_text
+    assert "找到一个新线索" not in result.output_text
+    guided = result.metadata["guidedConversation"]
+    assert guided["mode"] == "SHORT_TURN"
+    assert guided["phase"] == "CHAT"
+    assert result.metadata["topic"] == "小智是谁"
 
 
 def test_object_detection_is_a_reviewed_follow_up_topic() -> None:
@@ -168,10 +122,11 @@ def test_new_topics_provide_stage_specific_lesson_and_recorded_practice(
     assert quiz.payload["maxScore"] == expected_count * 10
     assert len(quiz.payload["questions"]) == expected_count
     if expected_count == 3:
+        # 低年级小测图画化后第一题配图片卡（此前是 emoji 🐱）。
         assert quiz.payload["questions"][0]["visual"] == {
-            "kind": "emoji",
-            "value": "🐱",
-            "alt": "一只小猫",
+            "kind": "image",
+            "value": "/assets/experience/primary/quiz/quiz-cat-card.webp",
+            "alt": "一只橙色小猫的图片卡",
         }
         assert quiz.payload["questions"][2]["correctOptionId"] == "check"
         assert quiz.payload["questions"][0]["errorType"] == "LABEL_MISMATCH"

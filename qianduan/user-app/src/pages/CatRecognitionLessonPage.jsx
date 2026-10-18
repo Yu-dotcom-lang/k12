@@ -41,7 +41,7 @@ const STAGE_LABELS = {
   SENIOR_HIGH: "高中",
 };
 
-export function CatRecognitionLessonPage({ session, requireLogin, navigate, onContinue }) {
+export function CatRecognitionLessonPage({ session, requireLogin, navigate, onAskTopic, onContinue }) {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(Boolean(session));
   const [stageSaving, setStageSaving] = useState(false);
@@ -263,11 +263,20 @@ export function CatRecognitionLessonPage({ session, requireLogin, navigate, onCo
         <section className="cat-stage-picker">
           <p className="eyebrow">第一步 · 选择适合的学段</p>
           <h1>这是一节小学低年级 AI 课</h1>
-          <p>当前学习档案：{STAGE_LABELS[profile?.schoolStage] || "尚未选择"}。切换后，讲解会使用更短的句子、绘本和图片游戏。</p>
+          <p>当前学习档案：{STAGE_LABELS[profile?.schoolStage] || "尚未选择"}。本页互动课是小学低年级版本；其他学段点对应卡片，去 AI 学习台看同一主题的特征动画与分步练习。</p>
           <div className="stage-choice-row" aria-label="学段选择">
             {Object.entries(STAGE_LABELS).map(([value, label]) => (
-              <button className={value === "PRIMARY_LOWER" ? "active" : ""} type="button" key={value} disabled={value !== "PRIMARY_LOWER"}>
-                <strong>{label}</strong><span>{value === "PRIMARY_LOWER" ? "本课入口" : "可在个人中心选择"}</span>
+              <button
+                className={value === "PRIMARY_LOWER" ? "active" : ""}
+                type="button"
+                key={value}
+                onClick={value === "PRIMARY_LOWER"
+                  ? undefined
+                  : () => (onAskTopic
+                    ? onAskTopic({ title: "图像分类", code: "image-classification" })
+                    : navigate("ai-studio"))}
+              >
+                <strong>{label}</strong><span>{value === "PRIMARY_LOWER" ? "本课入口" : "去 AI 学习台看对应版本"}</span>
               </button>
             ))}
           </div>

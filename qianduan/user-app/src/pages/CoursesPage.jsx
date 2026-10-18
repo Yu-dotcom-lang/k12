@@ -2,7 +2,7 @@ import { ArrowRight, BookOpen, CheckCircle2, Clock3, LoaderCircle, Map as MapIco
 import { useEffect, useMemo, useState } from "react";
 import { coursesApi, knowledgeGraphApi, practiceApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
-import { courses as visualCourses } from "../data/learningData.js";
+import { courses as visualCourses, realShowcaseCourses } from "../data/learningData.js";
 import {
   courseMatchesLearningScope,
   EXPERIENCE,
@@ -67,18 +67,17 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
     return () => { active = false; };
   }, [session]);
 
-  // 未登录且公开接口没有数据时，用与首页一致的示例课程兜底，课程中心不再是一块空白。
+  // 未登录且公开接口没有数据时，展示平台真实发布的课程（真实课程 id，登录后点击直接进入课程详情）。
   const fallbackPreviews = useMemo(
-    () => visualCourses
+    () => realShowcaseCourses
       .filter((course) => courseMatchesLearningScope(course.grade, learningProfile?.schoolStage, experience))
-      .map((course, index) => ({
-        id: `preview-${index}`,
+      .map((course) => ({
+        id: course.id,
         title: course.title,
         subject: course.subject,
         gradeLevel: course.grade,
-        description: course.next ? `下一节：${course.next}` : course.lessons,
+        description: course.next,
         coverUrl: course.image,
-        preview: true,
       })),
     [experience, learningProfile?.schoolStage],
   );
@@ -191,7 +190,7 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
                 }}
               />
               <div className="course-detail-copy">
-                <span>{course.subject} · {course.gradeLevel}{course.preview ? " · 示例课程" : ""}</span>
+                <span>{course.subject} · {course.gradeLevel}</span>
                 <h2>{course.title}</h2>
                 {(experience !== EXPERIENCE.PRIMARY) && <p>{course.description || "课程暂未填写简介"}</p>}
                 {progress && <div className="course-card-progress"><div><span style={{ width: `${Math.min(100, Math.max(0, Number(progress.progressPercent || 0)))}%` }} /></div><small>{progress.progressPercent}% · 已完成 {progress.completedChapters}/{progress.totalChapters} 章</small></div>}
@@ -203,6 +202,13 @@ export function CoursesPage({ session, requireLogin, navigate, experience = EXPE
           })}
         </section>
       )}
+      <StageLadder
+        graph={graph}
+        experience={experience}
+        currentStage={profileMatchesExperience ? learningProfile?.schoolStage : null}
+        onAskPoint={onAskKnowledgePoint}
+        navigate={navigate}
+      />
       {session && graph && (
         <KnowledgeMap
           graph={graph}
@@ -244,6 +250,8 @@ function categoryEmoji(title) {
  * 点卡片直接带知识点编码去问问小智，形成「课程 → 课堂」闭环。
  */
 function KnowledgeMap({ graph, masteryMap, stageLabel, experience, onAskPoint }) {
+  // 独立于上方课程搜索：这里的搜索只筛选知识地图的知识点卡片。
+  const [query, setQuery] = useState("");
   const prereqByCode = useMemo(() => {
     const map = new Map();
     graph.edges
@@ -259,7 +267,14 @@ function KnowledgeMap({ graph, masteryMap, stageLabel, experience, onAskPoint })
   const isPrimary = experience === EXPERIENCE.PRIMARY;
 
   const groups = useMemo(() => {
-    const filtered = graph.points.filter((point) => !stageLabel || (point.stages || []).includes(stageLabel));
+    const keyword = query.trim().toLowerCase();
+    const filtered = graph.points
+      .filter((point) => !stageLabel || (point.stages || []).includes(stageLabel))
+      .filter((point) => !keyword
+        || (point.title || "").toLowerCase().includes(keyword)
+        || (point.code || "").toLowerCase().includes(keyword))
+      // 星级递增：先学简单的（1★），带星星多的挑战放后面。
+      .sort((left, right) => (Number(left.difficulty) || 1) - (Number(right.difficulty) || 1));
     const grouped = new Map();
     filtered.forEach((point) => {
       const key = point.categoryCode || "other";
@@ -268,9 +283,9 @@ function KnowledgeMap({ graph, masteryMap, stageLabel, experience, onAskPoint })
     });
     const list = [...grouped.values()];
     return isPrimary ? list.slice(0, 4) : list;
-  }, [graph, stageLabel, isPrimary]);
+  }, [graph, stageLabel, isPrimary, query]);
 
-  if (!groups.length) return null;
+  if (!groups.length && !query.trim()) return null;
 
   return (
     <section className="knowledge-map" aria-label="知识地图">
@@ -282,8 +297,19 @@ function KnowledgeMap({ graph, masteryMap, stageLabel, experience, onAskPoint })
             ? "先学下面的基础图标，再挑战带星星多的；点一张卡，小智就带你学。"
             : `按主题浏览知识点：难度、前置关系与掌握状态一目了然${stageLabel ? `（${stageLabel}）` : ""}；点卡片可让 AI 助教讲解。`}</p>
         </div>
+        <label className="knowledge-map-search">
+          <Search size={15} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={isPrimary ? "搜一搜知识点" : "搜索知识点"}
+            title="只筛选知识地图里的知识点卡片"
+          />
+        </label>
       </header>
-      {groups.map((group) => (
+      {groups.length === 0 ? (
+        <p className="knowledge-map-empty">没有找到与「{query.trim()}」匹配的知识点，换个关键词试试。</p>
+      ) : groups.map((group) => (
         <div className="knowledge-map-group" key={group.title}>
           <h3>{categoryEmoji(group.title)} {group.title}</h3>
           <div className={`knowledge-point-grid${isPrimary ? " primary" : ""}`}>
@@ -332,6 +358,78 @@ function KnowledgeMap({ graph, masteryMap, stageLabel, experience, onAskPoint })
           </div>
         </div>
       ))}
+    </section>
+  );
+}
+
+/**
+ * 四学段难度阶梯（P1-6）：以「循环 → 算法」同一主题为例，展示四个学段的内容与难度递进。
+ * 四行入口全部是平台真实功能（积木实验室 / 图形化课程 / AI 小测 / 算法动画）；
+ * 主题横跨四学段的依据来自知识图谱（visual_programming.loops），未登录评委也能看到。
+ */
+const STAGE_LADDER = [
+  {
+    key: "PRIMARY_LOWER", label: "小学低年级", stars: 1,
+    title: "积木实验室 · 循环积木",
+    desc: "拖一块「重复执行」积木，让角色转圈圈——不用写字，先看懂“重复”。",
+    action: "去玩循环积木", go: ({ navigate }) => navigate("visual-code-lab"),
+  },
+  {
+    key: "PRIMARY_UPPER", label: "小学高年级", stars: 2,
+    title: "《图形化编程与智能小车》",
+    desc: "用循环积木控制小车重复走路线：同一块积木，跑完整圈路线。",
+    action: "去看这门课", go: ({ navigate }) => navigate("courses"),
+  },
+  {
+    key: "JUNIOR_HIGH", label: "初中", stars: 3,
+    title: "AI 小测 · 循环与重复",
+    desc: "在 Python 代码里写循环，提交后当场判分，成绩记入学习画像。",
+    action: "来一次小测", go: ({ onAskPoint }) => onAskPoint?.({ title: "循环与重复", code: "computing.loop_basics" }),
+  },
+  {
+    key: "SENIOR_HIGH", label: "高中", stars: 4,
+    title: "算法动画 · 冒泡排序",
+    desc: "看冒泡排序如何一步步比较与交换，再进代码实验自己跑一遍。",
+    action: "看动画演示", go: ({ onAskPoint }) => onAskPoint?.({ title: "冒泡排序", code: "sorting.bubble_sort" }),
+  },
+];
+
+function StageLadder({ graph, experience, currentStage, onAskPoint, navigate }) {
+  const isPrimary = experience === EXPERIENCE.PRIMARY;
+  const loopsPoint = (graph?.points || []).find((point) => point.code === "visual_programming.loops");
+  const spansAll = (loopsPoint?.stages || []).length >= 4;
+  return (
+    <section className="stage-ladder" aria-label="同一主题四个学段的难度进阶">
+      <header className="stage-ladder-head">
+        <span><TrendingUp size={18} /></span>
+        <div>
+          <strong>{isPrimary ? "同一个主题，越学越厉害" : "同一主题 · 四学段进阶"}</strong>
+          <p>{isPrimary
+            ? "看看「重复」这个本领在不同年级怎么玩：从积木一步步走到真正的算法。"
+            : "以「循环 → 算法」为例：同一主题在四个学段的内容与难度递进，每个入口都是平台真实功能。"}</p>
+        </div>
+        {spansAll && <em className="stage-ladder-kg">知识图谱：该主题横跨 4 个学段</em>}
+      </header>
+      <ol className={`stage-ladder-track${isPrimary ? " primary" : ""}`}>
+        {STAGE_LADDER.map((step) => (
+          <li key={step.key} className={step.key === currentStage ? "current" : ""}>
+            <div className="stage-ladder-card">
+              <small>{step.label}{step.key === currentStage ? " · 当前学段" : ""}</small>
+              <strong>{step.title}</strong>
+              <p>{step.desc}</p>
+              <div className="stage-ladder-foot">
+                <span className="stage-ladder-stars" title={`学段难度 ${step.stars}/4`} aria-label={`学段难度 ${step.stars} 星（共 4 星）`}>
+                  {"★".repeat(step.stars)}{"☆".repeat(4 - step.stars)}
+                </span>
+                <button type="button" onClick={() => step.go({ navigate, onAskPoint })}>
+                  {step.action}<ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p className="stage-ladder-note">难度星表示同一主题随学段的内容深度递进；主题的学段覆盖与难度数据来自平台知识图谱（重复执行与循环积木，难度 {loopsPoint?.difficulty || 1}/4）。</p>
     </section>
   );
 }

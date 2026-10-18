@@ -1,10 +1,11 @@
 import { BarChart3, BookOpen, CheckCircle2, ClipboardCheck, FileText, LoaderCircle, MessageSquareText, Sparkles, Target, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { coursesApi, diagnosticsApi, homeworksApi, practiceApi, profileApi } from "../api/client.js";
+import { coursesApi, diagnosticsApi, homeworksApi, knowledgeGraphApi, practiceApi, profileApi } from "../api/client.js";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { AuthGateShowcase } from "../components/AuthGateShowcase.jsx";
 import { LearnerKnowledgeNetwork } from "../components/LearnerKnowledgeNetwork.jsx";
 import { LearningRhythm } from "../components/LearningRhythm.jsx";
+import { PersonalizationLoop } from "../components/PersonalizationLoop.jsx";
 import { courseMatchesLearningScope, EXPERIENCE, learningProfileLabel } from "../experience/experience.js";
 
 const stages = [["PRIMARY_LOWER", "小学低年级"], ["PRIMARY_UPPER", "小学高年级"], ["JUNIOR_HIGH", "初中"], ["SENIOR_HIGH", "高中"]];
@@ -30,6 +31,7 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
   const [practiceInsights, setPracticeInsights] = useState([]);
   const [knowledgeMastery, setKnowledgeMastery] = useState([]);
   const [diagnostic, setDiagnostic] = useState(null);
+  const [graph, setGraph] = useState(null);
   const [loading, setLoading] = useState(Boolean(session));
   const [error, setError] = useState("");
 
@@ -41,7 +43,6 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
       setResults([]);
       setPracticeInsights([]);
       setKnowledgeMastery([]);
-      setEvidence([]);
       setDiagnostic(null);
       setLoading(false);
       return () => { active = false; };
@@ -114,6 +115,44 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
     return () => { active = false; };
   }, [session, practiceRevision, experience, activeLearningProfile]);
 
+  // 知识图谱（带本地缓存）：用于给「接下来学什么」补一条可解释的推荐依据（前置/后继关系）。
+  useEffect(() => {
+    if (!session) return undefined;
+    let active = true;
+    knowledgeGraphApi.overview()
+      .then((data) => { if (active) setGraph(data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [session]);
+
+  // 推荐依据（P1-7）：掌握度 + 知识图谱前置/后继 + 学习画像，全部来自真实接口，缺哪环就少说哪环。
+  const insightWhy = useMemo(() => {
+    const titleByCode = new Map((graph?.points || []).map((point) => [point.code, point.title]));
+    const codeByTitle = new Map();
+    (graph?.points || []).forEach((point) => {
+      if (!codeByTitle.has(point.title)) codeByTitle.set(point.title, point.code);
+    });
+    const prereqEdges = (graph?.edges || []).filter((edge) => edge.relation === "PREREQUISITE_OF");
+    const masteryByCode = new Map(knowledgeMastery.map((item) => [item.knowledgeCode, item]));
+    return (insight) => {
+      const parts = [];
+      const row = knowledgeMastery.find((item) => item.topic === insight.topic);
+      if (row) parts.push(`掌握度 ${row.masteryPercent}%${Number(row.masteryPercent) < 80 ? "（低于 80% 巩固线，优先安排）" : "（已达标，可进阶）"}`);
+      const code = codeByTitle.get(insight.topic);
+      if (code) {
+        const weakPre = prereqEdges
+          .filter((edge) => edge.toCode === code)
+          .map((edge) => masteryByCode.get(edge.fromCode))
+          .find((m) => !m || Number(m.masteryPercent) < 60);
+        if (weakPre) parts.push(`知识图谱显示先补前置「${weakPre.topic || titleByCode.get(weakPre.knowledgeCode) || "前置知识点"}」`);
+        const unlocked = prereqEdges.find((edge) => edge.fromCode === code);
+        if (unlocked) parts.push(`学好它才能继续学「${titleByCode.get(unlocked.toCode) || unlocked.toCode}」`);
+      }
+      if (profile) parts.push(`按学段画像（${learningProfileLabel(profile)}）安排`);
+      return parts.join("；");
+    };
+  }, [graph, knowledgeMastery, profile]);
+
   const metrics = useMemo(() => {
     const graded = results.filter((item) => item.status === "GRADED" && item.score != null);
     const averageScore = graded.length
@@ -168,6 +207,17 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
         </div>
         <button className="button secondary" type="button" onClick={() => navigate("courses")}><BookOpen size={16} />查看阶段课程</button>
       </section>
+
+      <PersonalizationLoop
+        profile={profile}
+        knowledgeMastery={knowledgeMastery}
+        practiceInsights={practiceInsights}
+        history={history}
+        experience={experience}
+        onOpenProfile={onOpenProfile}
+        onPractice={onPractice}
+        navigate={navigate}
+      />
 
       <LearningRhythm session={session} navigate={navigate} experience={experience} history={history} results={results} className="report-learning-rhythm" />
 
@@ -242,6 +292,7 @@ export function ProgressPage({ session, requireLogin, navigate, onOpenProfile, o
                   <span>最近 {insight.sampleCount} 次 · 平均 {insight.averageScorePercent}%{mastery ? ` · 累计 ${mastery.attemptCount} 次 / ${mastery.masteryPercent}%${mastery.evidenceCount ? ` · 证据 ${mastery.evidenceCount} 条` : ""}` : ""}</span>
                   {mastery && <div className="progress-track" role="progressbar" aria-label={`${insight.topic}练习掌握参考`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={mastery.masteryPercent}><span style={{ width: `${Math.min(100, Math.max(0, mastery.masteryPercent))}%` }} /></div>}
                   <p>{insight.suggestion}</p>
+                  {insightWhy(insight) && <p className="insight-why"><Sparkles size={12} />{insightWhy(insight)}</p>}
                   <button className="button secondary" type="button" onClick={() => onPractice(insight.topic)}><MessageSquareText size={14} />继续练习</button>
                 </article>;
               }) : <p>完成 AI 助教小测后，这里会根据近期练习给出建议。</p>}

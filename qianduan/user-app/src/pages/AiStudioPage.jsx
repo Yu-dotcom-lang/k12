@@ -5,10 +5,11 @@ import { PrimaryLearningGuide } from "../components/PrimaryLearningGuide.jsx";
 import { WorkspacePanel } from "../components/WorkspacePanel.jsx";
 import { WorkspaceProfileBar } from "../components/WorkspaceProfileBar.jsx";
 import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
+import { requestChallengeFocus } from "./ChallengePage.jsx";
 import { topicsByCategory } from "../data/teachingTopics.js";
 import { primaryChatStarters } from "../data/primaryChatPictures.js";
 import { knowledgeGraphApi, practiceApi, profileApi } from "../api/client.js";
-import { buildLessonWhy } from "../utils/lessonWhy.js";
+import { buildLessonWhy, filterMasteryByStage } from "../utils/lessonWhy.js";
 import { EXPERIENCE } from "../experience/experience.js";
 
 const RAIL_MIN = 220;
@@ -43,6 +44,8 @@ export function AiStudioPage({
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
   const [lesson, setLesson] = useState(null);
   const [profileData, setProfileData] = useState({ ready: false, profile: null, mastery: [], insights: null, interests: [] });
+  // null = 图谱还没取到；weakMastery 为 null 时画像条先不渲染薄弱 chip，避免跨学段闪现。
+  const [graphPoints, setGraphPoints] = useState(null);
   const [gaps, setGaps] = useState([]);
   const dragging = useRef(false);
   const dragTarget = useRef("rail");
@@ -98,7 +101,8 @@ export function AiStudioPage({
     };
   }, []);
 
-  // 画像摘要取数：三个现成接口，谁失败就少显示谁（§4.1B 顶部画像摘要）。
+  // 画像摘要取数：三个现成接口先渲染画像条，谁失败就少显示谁（§4.1B）。
+  // 图谱总览较大（400+ 点）单独取，到位后再过滤薄弱 chip，不拖慢画像条首屏。
   useEffect(() => {
     if (!session) return;
     let active = true;
@@ -112,6 +116,21 @@ export function AiStudioPage({
           insights: insightsResult.status === "fulfilled" ? insightsResult.value : null,
           interests: (profileResult.status === "fulfilled" ? profileResult.value?.interests : []) || [],
         });
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    knowledgeGraphApi.overview()
+      .then((value) => {
+        if (active) setGraphPoints(value?.points || []);
+      })
+      .catch(() => {
+        if (active) setGraphPoints([]);
       });
     return () => {
       active = false;
@@ -140,13 +159,20 @@ export function AiStudioPage({
     };
   }, [focusTopicCode, profileData.mastery]);
 
+  // 薄弱建议按学段过滤：起步学段高于当前学段的知识点不冒进画像条与推荐理由；
+  // 平均掌握仍用全量 mastery（前置缺口计算同样用全量，跨学段前置不能丢）。
+  const stageMastery = filterMasteryByStage(
+    profileData.mastery,
+    profileData.profile?.schoolStage || schoolStage,
+    graphPoints,
+  );
   const lessonWhy = buildLessonWhy({
     topicTitle: lesson?.topicTitle || null,
-    mastery: profileData.mastery,
+    mastery: stageMastery,
     gaps,
     interests: profileData.interests,
   });
-  const fallbackNext = (profileData.insights?.weakPoints || profileData.mastery || [])
+  const fallbackNext = (profileData.insights?.weakPoints || stageMastery)
     .filter((item) => Number.isFinite(item?.masteryPercent) ? item.masteryPercent < 70 : Boolean(item?.topic))
     .slice(0, 4)
     .map((item) => item.topic)
@@ -243,8 +269,13 @@ export function AiStudioPage({
 
       <WorkspaceProfileBar
         profileData={session ? profileData : null}
+        weakMastery={graphPoints === null ? null : stageMastery}
         why={lessonWhy}
         currentTopicTitle={lesson?.topicTitle || null}
+        onOpenChallenge={(code) => {
+          if (code) requestChallengeFocus(code);
+          navigate("challenge");
+        }}
       />
 
       <div
@@ -383,6 +414,7 @@ export function AiStudioPage({
               onRequireLogin={() => requireLogin()}
               onPracticeRecorded={onPracticeRecorded}
               navigate={navigate}
+              onOpenChallenge={() => navigate("challenge")}
               variant="page"
               activeTopicId={activeTopicId}
               onTopicChange={setActiveTopicId}

@@ -18,6 +18,82 @@ export function averageMastery(mastery = []) {
   return Math.round(rows.reduce((sum, item) => sum + item.masteryPercent, 0) / rows.length);
 }
 
+const STAGE_LABELS = {
+  PRIMARY_LOWER: "小学低年级",
+  PRIMARY_UPPER: "小学高年级",
+  JUNIOR_HIGH: "初中",
+  SENIOR_HIGH: "高中",
+};
+
+// 学段从低到高，用于判断知识点是否「起步就高于当前学段」。
+const STAGE_ORDER = ["小学低年级", "小学高年级", "初中", "高中"];
+
+/**
+ * 挑战积分口径（与排行榜 SQL 保持一致，勿单边修改）：
+ * 每个知识点 = ROUND(掌握度) + 通关奖励（最新得分 ≥90 +15 / ≥60 +10 / >0 +5）。
+ */
+export function challengeBonusFor(latestScorePercent) {
+  if (!(latestScorePercent > 0)) return 0;
+  if (latestScorePercent >= 90) return 15;
+  if (latestScorePercent >= 60) return 10;
+  return 5;
+}
+
+export function challengePointsForRow(row) {
+  if (!Number.isFinite(row?.masteryPercent)) return 0;
+  return Math.round(row.masteryPercent) + challengeBonusFor(row?.latestScorePercent);
+}
+
+export function challengePointsTotal(mastery = []) {
+  return (Array.isArray(mastery) ? mastery : []).reduce(
+    (sum, row) => sum + challengePointsForRow(row),
+    0,
+  );
+}
+
+export function starsForPercent(percent) {
+  if (!(percent > 0)) return 0;
+  if (percent >= 90) return 3;
+  if (percent >= 60) return 2;
+  return 1;
+}
+
+/** 知识点级学段过滤：只保留起步学段不高于当前学段的知识点（闯关地图用）。 */
+export function filterPointsByStage(points = [], schoolStage) {
+  const stageIndex = STAGE_ORDER.indexOf(STAGE_LABELS[schoolStage]);
+  if (stageIndex < 0 || !Array.isArray(points) || !points.length) {
+    return Array.isArray(points) ? points : [];
+  }
+  return points.filter((point) => {
+    const stages = point?.stages || [];
+    if (!stages.length) return true;
+    const indexes = stages.map((stage) => STAGE_ORDER.indexOf(stage)).filter((index) => index >= 0);
+    if (!indexes.length) return true;
+    return Math.min(...indexes) <= stageIndex;
+  });
+}
+
+/**
+ * 按学段过滤薄弱点：只滤掉起步学段就高于当前学段的知识点
+ * （如小学低年级档案不该被提示「插入排序薄弱」）；覆盖到当前或更低
+ * 学段的一律保留，学段信息缺失的也不误杀。平均掌握仍用全量记录，
+ * 跨学段历史在「学习进度」页照常可见。
+ */
+export function filterMasteryByStage(mastery = [], schoolStage, points = []) {
+  const stageIndex = STAGE_ORDER.indexOf(STAGE_LABELS[schoolStage]);
+  if (stageIndex < 0 || !Array.isArray(points) || !points.length) {
+    return Array.isArray(mastery) ? mastery : [];
+  }
+  const stagesByCode = new Map(points.map((point) => [point?.code, point?.stages || []]));
+  return (Array.isArray(mastery) ? mastery : []).filter((item) => {
+    const stages = stagesByCode.get(item?.knowledgeCode);
+    if (!stages || !stages.length) return true;
+    const indexes = stages.map((stage) => STAGE_ORDER.indexOf(stage)).filter((index) => index >= 0);
+    if (!indexes.length) return true;
+    return Math.min(...indexes) <= stageIndex;
+  });
+}
+
 function labelOf(item) {
   return item?.topic || item?.title || item?.knowledgeCode || item?.code || "这个知识点";
 }
