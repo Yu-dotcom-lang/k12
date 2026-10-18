@@ -3,6 +3,7 @@ from dataclasses import replace
 from uuid import uuid4
 
 from k12_agent_runtime.application.courseware import GenerateCoursewareUseCase
+from k12_agent_runtime.application.courseware import GenerateCoursewareUseCase
 from k12_agent_runtime.application.rag import SearchKnowledgeUseCase
 from k12_agent_runtime.domain.agents.models import (
     AgentArtifact,
@@ -96,6 +97,42 @@ class TeachingAssistantAgent:
             output_text=final_state["output_text"],
             artifacts=tuple(artifacts),
             metadata=final_state["metadata"],
+        )
+
+    async def _courseware_turn(self, run_input: AgentRunInput) -> AgentRunResult | None:
+        """「做一个课件」旁路：生成失败时返回 None 走原对话兜底。"""
+        if self._generate_courseware is None:
+            return None
+        context = dict(run_input.context)
+        stage = str(context.get("stage") or "lower_primary")
+        try:
+            document = await self._generate_courseware.execute(
+                run_input.input_text or "",
+                stage=stage,
+                topic_code=context.get("topicCode"),
+            )
+        except (ValueError, RuntimeError):
+            return None
+        text = (
+            "课件做好啦！点下面的卡片，跟小智一页一页学吧。"
+            if self.code == "lower-primary-tutor"
+            else f"《{document['title']}》已生成，点开下方课件卡片即可讲授。"
+        )
+        return AgentRunResult(
+            run_id=run_input.run_id,
+            agent_code=self.code,
+            status=AgentRunStatus.SUCCEEDED,
+            output_text=text,
+            artifacts=(
+                AgentArtifact(
+                    artifact_id=str(uuid4()),
+                    kind=AgentArtifactKind.COURSEWARE,
+                    mime_type="application/vnd.k12.courseware.v1+json",
+                    title=document["title"],
+                    payload=document,
+                ),
+            ),
+            metadata={},
         )
 
     async def _courseware_turn(self, run_input: AgentRunInput) -> AgentRunResult | None:
