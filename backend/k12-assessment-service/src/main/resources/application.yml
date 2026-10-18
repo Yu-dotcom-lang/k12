@@ -78,6 +78,3 @@ k12:
   internal:
     # 与 agent-service 共享的写回密钥；为空时证据写回通道整体关闭。
     evidence-token: ${K12_INTERNAL_EVIDENCE_TOKEN:}
-  internal:
-    # 与 agent-service 共享的写回密钥；为空时证据写回通道整体关闭。
-    evidence-token: ${K12_INTERNAL_EVIDENCE_TOKEN:}
