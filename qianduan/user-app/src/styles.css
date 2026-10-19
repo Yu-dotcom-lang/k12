@@ -4537,248 +4537,6 @@ body.ai-studio-resizing iframe, body.ai-studio-resizing .teaching-chat { pointer
 }
 
 /* ==================================================================
-   中学端「未来实验室」深色主题 —— .experience-teen
-   依据《K12学生端双学段UI设计实施方案.md》§4.2：
-   主背景 #071525/#0B1B31 · 面板 #102640 · 主高亮 #15D8FF ·
-   辅助 #8B5CFF/#FF9B45 · 文字 #F3F8FF/#9CB2C8 · 圆角 12–18px
-   ================================================================== */
-body:has(main.experience-teen) { background:#071525; }
-.experience-teen.student-experience {
-  --ink:#f3f8ff;
-  --muted:#9cb2c8;
-  --subtle:#7f95ad;
-  --line:rgba(125,168,210,.16);
-  --line-strong:rgba(125,168,210,.3);
-  --blue:#15d8ff;
-  --blue-dark:#5ce3ff;
-  --blue-soft:rgba(21,216,255,.12);
-  --surface:#0b1b31;
-  --yellow:#ffb45e;
-  --teal:#3fe0c4;
-  --danger:#ff8177;
-  color:#f3f8ff;
-  color-scheme:dark;
-  background:
-    radial-gradient(1100px 520px at 85% -8%, rgba(139,92,255,.14), transparent 62%),
-    radial-gradient(900px 460px at -12% 20%, rgba(21,216,255,.1), transparent 58%),
-    linear-gradient(180deg, #071525 0%, #0a1a2e 52%, #081727 100%);
-}
-.experience-teen ::selection { background:rgba(21,216,255,.32); }
-.experience-teen ::placeholder { color:#5f7891; }
-.experience-teen ::-webkit-scrollbar { width:10px; height:10px; }
-.experience-teen ::-webkit-scrollbar-thumb { border-radius:8px; background:rgba(125,168,210,.28); }
-.experience-teen ::-webkit-scrollbar-track { background:transparent; }
-
-/* ---- 顶部导航 / 品牌区 ---- */
-.experience-teen .site-header { border-bottom-color:rgba(125,168,210,.18); background:rgba(7,21,37,.84); }
-.experience-teen .experience-switcher { border-color:var(--line); background:rgba(16,38,64,.85); }
-.experience-teen .experience-switcher button.active { color:#06121f; background:linear-gradient(135deg,#15d8ff,#0fb0e0); box-shadow:0 0 14px rgba(21,216,255,.4); }
-.experience-teen .experience-switcher button:hover { color:#5ce3ff; }
-.experience-teen .profile-stage-chip { color:#9fd9ee; border-color:rgba(21,216,255,.3); background:rgba(21,216,255,.08); }
-.experience-teen .header-search { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .header-search input { color:var(--ink); }
-.experience-teen .header-login { color:#bfe9f7; border-color:rgba(125,168,210,.4); background:transparent; }
-.experience-teen .header-login:hover { color:#fff; border-color:#15d8ff; }
-.experience-teen .header-register { color:#06121f; border-color:transparent; background:linear-gradient(135deg,#15d8ff,#0fb0e0); }
-.experience-teen .header-register:hover { background:linear-gradient(135deg,#3ce0ff,#15d8ff); }
-.experience-teen .icon-button { color:#9cb2c8; border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .icon-button:hover { color:#15d8ff; border-color:rgba(21,216,255,.5); }
-.experience-teen .avatar { color:#06121f; background:linear-gradient(135deg,#15d8ff,#8b5cff); }
-.experience-teen .user-name-button { color:#dff4fb; }
-.experience-teen .notification-panel { border-color:var(--line-strong); background:#0b1b31; box-shadow:0 22px 50px rgba(2,10,22,.6); }
-.experience-teen .notification-item { border-bottom-color:var(--line); }
-.experience-teen .site-footer { border-top-color:var(--line); }
-
-/* ---- 按钮 / 文字链 ---- */
-.experience-teen .button.primary { color:#06121f; border-color:transparent; background:linear-gradient(135deg,#15d8ff,#0fb0e0); box-shadow:0 8px 22px rgba(21,216,255,.26); }
-.experience-teen .button.primary:hover { background:linear-gradient(135deg,#3ce0ff,#15d8ff); }
-.experience-teen .button.secondary { color:#bfe9f7; border-color:rgba(125,168,210,.35); background:rgba(16,38,64,.9); }
-.experience-teen .button.secondary:hover { color:#fff; border-color:#15d8ff; }
-.experience-teen .button.ghost { color:#9cb2c8; border-color:var(--line-strong); background:transparent; }
-.experience-teen .button.ghost:hover { color:#15d8ff; border-color:rgba(21,216,255,.5); }
-.experience-teen .button:disabled { color:#5f7891; background:rgba(16,38,64,.6); box-shadow:none; }
-.experience-teen .text-button { color:#15d8ff; }
-.experience-teen .text-button:hover { color:#5ce3ff; }
-.experience-teen .eyebrow { color:#15d8ff; }
-
-/* ---- 首页 Hero 与骨架 ---- */
-.experience-teen .home-hero { border-bottom-color:var(--line); background:transparent; box-shadow:none; }
-.experience-teen .hero-copy h1 { color:#f3f8ff; }
-.experience-teen .hero-copy > p:not(.eyebrow) { color:#9cb2c8; }
-.experience-teen .hero-image.experience-hero-art { border:1px solid rgba(125,168,210,.22); border-radius:18px; background:linear-gradient(160deg, rgba(21,216,255,.12), rgba(139,92,255,.1) 55%, rgba(8,23,39,.65)); box-shadow:0 24px 60px rgba(2,10,22,.5), inset 0 0 0 1px rgba(21,216,255,.06); }
-.experience-teen .hero-image span { color:#9fd9ee; }
-.experience-teen .home-side-rail { border:1px solid rgba(125,168,210,.18); border-radius:16px; background:rgba(16,38,64,.74); box-shadow:0 16px 36px rgba(2,10,22,.42); }
-.experience-teen .home-side-rail small { color:#15d8ff; }
-.experience-teen .home-side-rail strong { color:#f3f8ff; }
-.experience-teen .home-side-rail button { color:#dff4fb; border:1px solid rgba(125,168,210,.25); border-radius:12px; background:rgba(21,216,255,.08); }
-.experience-teen .home-side-rail button:hover { color:#fff; border-color:#15d8ff; }
-.experience-teen .home-side-rail-left { border-top:3px solid #15d8ff; }
-.experience-teen .home-side-rail-right { border-top:3px solid #8b5cff; }
-.experience-teen .section-heading h2 { color:#f3f8ff; }
-.experience-teen .section-heading p { color:#9cb2c8; }
-
-/* ---- 通用玻璃面板（卡片 / 布局面板）---- */
-.experience-teen .visual-course-card,
-.experience-teen .home-shortcuts > button,
-.experience-teen .daily-plan-grid article,
-.experience-teen .course-detail-card,
-.experience-teen .tasks-main-panel,
-.experience-teen .task-widget,
-.experience-teen .task-rhythm-widget,
-.experience-teen .learning-latest,
-.experience-teen .report-panel,
-.experience-teen .learner-kg-side,
-.experience-teen .teaching-chat,
-.experience-teen .assistant-window,
-.experience-teen .ai-topic-rail,
-.experience-teen .teaching-steps,
-.experience-teen .practice-quiz,
-.experience-teen .detail-drawer,
-.experience-teen .settings-panel,
-.experience-teen .code-editor-panel,
-.experience-teen .code-control-panel > section,
-.experience-teen .sort-animation,
-.experience-teen .animation-modal {
-  border:1px solid rgba(125,168,210,.18);
-  border-radius:16px;
-  background:linear-gradient(180deg, #102640, #0c1f38);
-  box-shadow:0 14px 34px rgba(2,10,22,.45);
-}
-.experience-teen .visual-course-card h3,
-.experience-teen .home-shortcuts > button strong,
-.experience-teen .task-copy strong,
-.experience-teen .daily-plan-copy strong { color:#f3f8ff; }
-.experience-teen .visual-course-card span,
-.experience-teen .visual-course-card p,
-.experience-teen .home-shortcuts > button p,
-.experience-teen .daily-plan-copy p { color:#9cb2c8; }
-.experience-teen .visual-course-card button { color:#15d8ff; }
-.experience-teen .visual-course-card button:hover { color:#5ce3ff; }
-.experience-teen .learning-week > div { border-color:var(--line-strong); background:rgba(16,38,64,.7); color:#9cb2c8; }
-.experience-teen .learning-week > div.active { border-color:rgba(21,216,255,.55); background:rgba(21,216,255,.12); color:#bff1ff; }
-.experience-teen .learning-week > div.today { box-shadow:0 0 0 1px rgba(21,216,255,.6); }
-.experience-teen .learning-latest small { color:#15d8ff; }
-.experience-teen .learning-latest strong { color:#f3f8ff; }
-.experience-teen .learning-latest p { color:#9cb2c8; }
-
-/* ---- 任务 / 筛选 / 标签控件 ---- */
-.experience-teen .segmented-control { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .segmented-control button { color:#9cb2c8; }
-.experience-teen .segmented-control button.active { color:#06121f; background:#15d8ff; }
-.experience-teen .subject-filter { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .subject-filter button { color:#9cb2c8; }
-.experience-teen .subject-filter button.active { color:#06121f; background:#15d8ff; }
-.experience-teen .section-tabs button { color:#9cb2c8; background:rgba(16,38,64,.85); border-color:var(--line-strong); }
-.experience-teen .section-tabs button.active { color:#06121f; background:#15d8ff; }
-.experience-teen .task-board article { border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .task-summary article { border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .task-status-badge { border-color:var(--line-strong); background:rgba(21,216,255,.08); color:#9fd9ee; }
-.experience-teen .leaderboard-list > header { border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .leaderboard-summary > div { border:1px solid var(--line); background:rgba(16,38,64,.85); }
-.experience-teen .learner-name > span { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .learner-name em { color:#ffd18a; background:rgba(255,155,69,.14); }
-
-/* ---- 课程详情 / 阅读器 ---- */
-.experience-teen .chapter-list button { color:#dff4fb; border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .chapter-list button:hover { border-color:rgba(21,216,255,.5); }
-.experience-teen .toc-chapter { border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .course-overview-stat { border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .course-overview-next { border-color:var(--line); background:rgba(16,38,64,.7); }
-.experience-teen .course-overview-next > span { color:#9cb2c8; }
-.experience-teen .course-activity-item { border-color:var(--line); background:rgba(16,38,64,.7); }
-
-/* ---- AI 学习台 / 对话 ---- */
-.experience-teen .conversation { background:transparent; }
-.experience-teen .message > span { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .message-content { color:#dff4fb; }
-.experience-teen .ai-topic-group li button { color:#9cb2c8; }
-.experience-teen .ai-topic-group li button.active { color:#06121f; background:#15d8ff; }
-.experience-teen .knowledge-grounding { border-color:var(--line); background:rgba(21,216,255,.06); }
-.experience-teen .teaching-chat > footer { color:#7f95ad; }
-.experience-teen .assistant-input { border-color:var(--line-strong); background:rgba(11,27,49,.95); }
-.experience-teen .assistant-input input { color:#f3f8ff; }
-.experience-teen .assistant-launcher { color:#06121f; background:linear-gradient(135deg,#15d8ff,#8b5cff); box-shadow:0 10px 26px rgba(90,140,255,.35); }
-.experience-teen .assistant-window > header { color:#06121f; background:linear-gradient(135deg,#15d8ff,#0fb0e0); }
-.experience-teen .assistant-avatar { background:rgba(255,255,255,.85); }
-.experience-teen .markdown-body { color:#d7e7f7; }
-.experience-teen .markdown-body h1, .experience-teen .markdown-body h2, .experience-teen .markdown-body h3 { color:#f3f8ff; }
-.experience-teen .markdown-body code { color:#8fe8ff; background:rgba(21,216,255,.1); }
-.experience-teen .markdown-body pre { border-color:var(--line); background:#05101d; }
-.experience-teen .markdown-body pre code { color:#b7f3ff; background:transparent; }
-.experience-teen .markdown-body blockquote { border-left-color:#15d8ff; color:#9cb2c8; }
-.experience-teen .markdown-body table th { border-color:var(--line-strong); background:rgba(21,216,255,.08); }
-.experience-teen .markdown-body table td { border-color:var(--line); }
-.experience-teen .code-coach-md { color:#cfe3f5; }
-.experience-teen .practice-quiz input { accent-color:#15d8ff; }
-.experience-teen .quiz-retry { border-color:var(--line-strong); background:rgba(16,38,64,.9); color:#9cb2c8; }
-
-/* ---- 表单 / 弹窗 ---- */
-.experience-teen input:not([type="checkbox"]):not([type="radio"]),
-.experience-teen select,
-.experience-teen textarea { color:#f3f8ff; border-color:rgba(125,168,210,.32); background:rgba(11,27,49,.95); }
-.experience-teen .login-dialog { border-color:rgba(125,168,210,.25); border-radius:18px; background:linear-gradient(180deg,#102640,#0b1b31); }
-.experience-teen .modal { border-color:rgba(125,168,210,.25); border-radius:18px; background:linear-gradient(180deg,#102640,#0b1b31); }
-.experience-teen .password-checklist li { color:#9cb2c8; background:rgba(16,38,64,.8); }
-.experience-teen .password-checklist li.ok { color:#3fe0c4; background:rgba(63,224,196,.1); }
-.experience-teen .page-error { border-color:var(--line-strong); background:rgba(16,38,64,.7); }
-.experience-teen .empty-state { color:#9cb2c8; border:1px dashed var(--line-strong); background:rgba(16,38,64,.5); }
-
-/* ---- 代码实验室 ---- */
-.experience-teen .code-editor-body-monaco { background:transparent; }
-.experience-teen .python-monaco-host .monaco-editor,
-.experience-teen .python-monaco-host .monaco-editor-background,
-.experience-teen .python-monaco-host .margin { background:#0b1b31 !important; }
-.experience-teen .python-monaco-host .margin-view-overlays .line-numbers { color:#4f6b8a !important; }
-.experience-teen .code-editor-body > .line-numbers { color:#4f6b8a; background:#05101d; }
-.experience-teen .code-result-stream { border-color:var(--line-strong); background:#05101d; color:#b7f3ff; }
-.experience-teen .code-result-stream.is-error { border-color:rgba(255,129,119,.4); background:rgba(180,35,24,.16); color:#ffc4bd; }
-.experience-teen .code-artifact { border-color:var(--line); background:rgba(5,16,29,.85); }
-.experience-teen .artifact-download { color:#9fd9ee; border-color:var(--line-strong); background:rgba(16,38,64,.9); }
-.experience-teen .code-editor-actions select { border-color:var(--line-strong); background:#0b1b31; color:#dff4fb; }
-.experience-teen .blocklySvg { background-color:#0d2038 !important; }
-.experience-teen .blocklyToolboxDiv { background:#0b1b31; color:#9cb2c8; }
-.experience-teen .blocklyFlyoutBackground { fill:#102640 !important; }
-.experience-teen .stage-cloud { border-color:var(--line); background:rgba(16,38,64,.85); }
-.experience-teen .blockly-data-station { border-color:var(--line); background:rgba(16,38,64,.85); }
-.experience-teen .blockly-speech { border-color:var(--line); background:rgba(16,38,64,.85); }
-.experience-teen .visual-mission-hover-card { border-color:var(--line-strong); background:#0c1f38; }
-.experience-teen .visual-mission-hover-hint { color:#9cb2c8; background:rgba(5,16,29,.9); }
-.experience-teen .cat-lesson-gate, .experience-teen .cat-stage-picker { border-color:var(--line); background:rgba(16,38,64,.8); }
-.experience-teen .cat-explanation { background:rgba(16,38,64,.85); }
-.experience-teen .classification-questions fieldset { border-color:var(--line); background:rgba(16,38,64,.6); }
-.experience-teen .classification-options label { border-color:var(--line-strong); background:rgba(11,27,49,.9); }
-.experience-teen .classification-hint { color:#9cb2c8; background:rgba(21,216,255,.06); }
-.experience-teen .cat-goal-list span { background:rgba(16,38,64,.9); }
-
-/* ---- 绘本（中学端入口保持实验室氛围）---- */
-.experience-teen .picture-book { border-color:var(--line); background:#0c1f38; }
-.experience-teen .picture-book-spread { background:rgba(11,27,49,.85); }
-.experience-teen .picture-book-copy aside { border-color:var(--line); background:rgba(16,38,64,.8); }
-
-/* ==================================================================
-   小学端「AI 冒险乐园」token 强化 —— .experience-primary
-   依据《K12学生端双学段UI设计实施方案.md》§4.1：
-   主色 #35B9E8 · 辅助 #FFD85A/#FF8FA3/#55D4B4 · 圆角 20–24px · 柔和阴影
-   ================================================================== */
-.experience-primary .button { border-radius:14px; }
-.experience-primary .button.primary { border-color:#35b9e8; background:linear-gradient(135deg, #4cc3ec, #2196c9); box-shadow:0 8px 20px rgba(53,185,232,.28); }
-.experience-primary .button.primary:hover { background:linear-gradient(135deg, #63cdf2, #35b9e8); }
-.experience-primary .visual-course-card,
-.experience-primary .home-shortcuts > button,
-.experience-primary .daily-plan-grid article,
-.experience-primary .home-side-rail { border-radius:20px; box-shadow:0 10px 24px rgba(53,185,232,.12); }
-.experience-primary .primary-adventure-strip > button { border-radius:22px; }
-.experience-primary .visual-course-card:nth-child(3n + 1) { border-top-color:#35b9e8; }
-.experience-primary .visual-course-card:nth-child(3n + 2) { border-top-color:#ffd85a; }
-.experience-primary .visual-course-card:nth-child(3n) { border-top-color:#ff8fa3; }
-.experience-primary .daily-plan-grid article:nth-child(3n + 1) { border-top-color:#35b9e8; background:#f2faff; }
-.experience-primary .daily-plan-grid article:nth-child(3n + 2) { border-top-color:#ffd85a; background:#fffbea; }
-.experience-primary .daily-plan-grid article:nth-child(3n) { border-top-color:#55d4b4; background:#effbf7; }
-.experience-primary .daily-plan-grid article:nth-child(4n) { border-top-color:#ff8fa3; background:#fff5f8; }
-.experience-primary .home-shortcuts > button:nth-child(2) > span { color:#8a6d00; background:#fff3c4; }
-.experience-primary .home-shortcuts > button:nth-child(3) > span { color:#c2496b; background:#ffe4ec; }
-
-/* ==================================================================
    比赛版双学段首页 —— 依据《K12双学段比赛版UI设计文档.md》
    方案A 色板：天空底 #EAF8FF · 主文字 #17304B · 行动橙 #FF8C64 ·
               太阳黄 #FFC653 · 探索蓝 #0879A8 · 薄荷 #6CCDB8
@@ -6733,3 +6491,245 @@ fieldset.illustrated .quiz-hint-text { font-size:13px; border-radius:14px; }
 .kp-prereqs em.gap { color:#b3261e; background:#fdecea; }
 .kp-ask { color:var(--blue); font-size:11px; font-weight:800; }
 .knowledge-point-grid.primary .kp-ask { font-size:12px; }
+
+/* ==================================================================
+   中学端「未来实验室」深色主题 —— .experience-teen
+   依据《K12学生端双学段UI设计实施方案.md》§4.2：
+   主背景 #071525/#0B1B31 · 面板 #102640 · 主高亮 #15D8FF ·
+   辅助 #8B5CFF/#FF9B45 · 文字 #F3F8FF/#9CB2C8 · 圆角 12–18px
+   ================================================================== */
+body:has(main.experience-teen) { background:#071525; }
+.experience-teen.student-experience {
+  --ink:#f3f8ff;
+  --muted:#9cb2c8;
+  --subtle:#7f95ad;
+  --line:rgba(125,168,210,.16);
+  --line-strong:rgba(125,168,210,.3);
+  --blue:#15d8ff;
+  --blue-dark:#5ce3ff;
+  --blue-soft:rgba(21,216,255,.12);
+  --surface:#0b1b31;
+  --yellow:#ffb45e;
+  --teal:#3fe0c4;
+  --danger:#ff8177;
+  color:#f3f8ff;
+  color-scheme:dark;
+  background:
+    radial-gradient(1100px 520px at 85% -8%, rgba(139,92,255,.14), transparent 62%),
+    radial-gradient(900px 460px at -12% 20%, rgba(21,216,255,.1), transparent 58%),
+    linear-gradient(180deg, #071525 0%, #0a1a2e 52%, #081727 100%);
+}
+.experience-teen ::selection { background:rgba(21,216,255,.32); }
+.experience-teen ::placeholder { color:#5f7891; }
+.experience-teen ::-webkit-scrollbar { width:10px; height:10px; }
+.experience-teen ::-webkit-scrollbar-thumb { border-radius:8px; background:rgba(125,168,210,.28); }
+.experience-teen ::-webkit-scrollbar-track { background:transparent; }
+
+/* ---- 顶部导航 / 品牌区 ---- */
+.experience-teen .site-header { border-bottom-color:rgba(125,168,210,.18); background:rgba(7,21,37,.84); }
+.experience-teen .experience-switcher { border-color:var(--line); background:rgba(16,38,64,.85); }
+.experience-teen .experience-switcher button.active { color:#06121f; background:linear-gradient(135deg,#15d8ff,#0fb0e0); box-shadow:0 0 14px rgba(21,216,255,.4); }
+.experience-teen .experience-switcher button:hover { color:#5ce3ff; }
+.experience-teen .profile-stage-chip { color:#9fd9ee; border-color:rgba(21,216,255,.3); background:rgba(21,216,255,.08); }
+.experience-teen .header-search { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .header-search input { color:var(--ink); }
+.experience-teen .header-login { color:#bfe9f7; border-color:rgba(125,168,210,.4); background:transparent; }
+.experience-teen .header-login:hover { color:#fff; border-color:#15d8ff; }
+.experience-teen .header-register { color:#06121f; border-color:transparent; background:linear-gradient(135deg,#15d8ff,#0fb0e0); }
+.experience-teen .header-register:hover { background:linear-gradient(135deg,#3ce0ff,#15d8ff); }
+.experience-teen .icon-button { color:#9cb2c8; border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .icon-button:hover { color:#15d8ff; border-color:rgba(21,216,255,.5); }
+.experience-teen .avatar { color:#06121f; background:linear-gradient(135deg,#15d8ff,#8b5cff); }
+.experience-teen .user-name-button { color:#dff4fb; }
+.experience-teen .notification-panel { border-color:var(--line-strong); background:#0b1b31; box-shadow:0 22px 50px rgba(2,10,22,.6); }
+.experience-teen .notification-item { border-bottom-color:var(--line); }
+.experience-teen .site-footer { border-top-color:var(--line); }
+
+/* ---- 按钮 / 文字链 ---- */
+.experience-teen .button.primary { color:#06121f; border-color:transparent; background:linear-gradient(135deg,#15d8ff,#0fb0e0); box-shadow:0 8px 22px rgba(21,216,255,.26); }
+.experience-teen .button.primary:hover { background:linear-gradient(135deg,#3ce0ff,#15d8ff); }
+.experience-teen .button.secondary { color:#bfe9f7; border-color:rgba(125,168,210,.35); background:rgba(16,38,64,.9); }
+.experience-teen .button.secondary:hover { color:#fff; border-color:#15d8ff; }
+.experience-teen .button.ghost { color:#9cb2c8; border-color:var(--line-strong); background:transparent; }
+.experience-teen .button.ghost:hover { color:#15d8ff; border-color:rgba(21,216,255,.5); }
+.experience-teen .button:disabled { color:#5f7891; background:rgba(16,38,64,.6); box-shadow:none; }
+.experience-teen .text-button { color:#15d8ff; }
+.experience-teen .text-button:hover { color:#5ce3ff; }
+.experience-teen .eyebrow { color:#15d8ff; }
+
+/* ---- 首页 Hero 与骨架 ---- */
+.experience-teen .home-hero { border-bottom-color:var(--line); background:transparent; box-shadow:none; }
+.experience-teen .hero-copy h1 { color:#f3f8ff; }
+.experience-teen .hero-copy > p:not(.eyebrow) { color:#9cb2c8; }
+.experience-teen .hero-image.experience-hero-art { border:1px solid rgba(125,168,210,.22); border-radius:18px; background:linear-gradient(160deg, rgba(21,216,255,.12), rgba(139,92,255,.1) 55%, rgba(8,23,39,.65)); box-shadow:0 24px 60px rgba(2,10,22,.5), inset 0 0 0 1px rgba(21,216,255,.06); }
+.experience-teen .hero-image span { color:#9fd9ee; }
+.experience-teen .home-side-rail { border:1px solid rgba(125,168,210,.18); border-radius:16px; background:rgba(16,38,64,.74); box-shadow:0 16px 36px rgba(2,10,22,.42); }
+.experience-teen .home-side-rail small { color:#15d8ff; }
+.experience-teen .home-side-rail strong { color:#f3f8ff; }
+.experience-teen .home-side-rail button { color:#dff4fb; border:1px solid rgba(125,168,210,.25); border-radius:12px; background:rgba(21,216,255,.08); }
+.experience-teen .home-side-rail button:hover { color:#fff; border-color:#15d8ff; }
+.experience-teen .home-side-rail-left { border-top:3px solid #15d8ff; }
+.experience-teen .home-side-rail-right { border-top:3px solid #8b5cff; }
+.experience-teen .section-heading h2 { color:#f3f8ff; }
+.experience-teen .section-heading p { color:#9cb2c8; }
+
+/* ---- 通用玻璃面板（卡片 / 布局面板）---- */
+.experience-teen .visual-course-card,
+.experience-teen .home-shortcuts > button,
+.experience-teen .daily-plan-grid article,
+.experience-teen .course-detail-card,
+.experience-teen .tasks-main-panel,
+.experience-teen .task-widget,
+.experience-teen .task-rhythm-widget,
+.experience-teen .learning-latest,
+.experience-teen .report-panel,
+.experience-teen .learner-kg-side,
+.experience-teen .teaching-chat,
+.experience-teen .assistant-window,
+.experience-teen .ai-topic-rail,
+.experience-teen .teaching-steps,
+.experience-teen .practice-quiz,
+.experience-teen .detail-drawer,
+.experience-teen .settings-panel,
+.experience-teen .code-editor-panel,
+.experience-teen .code-control-panel > section,
+.experience-teen .sort-animation,
+.experience-teen .animation-modal {
+  border:1px solid rgba(125,168,210,.18);
+  border-radius:16px;
+  background:linear-gradient(180deg, #102640, #0c1f38);
+  box-shadow:0 14px 34px rgba(2,10,22,.45);
+}
+.experience-teen .visual-course-card h3,
+.experience-teen .home-shortcuts > button strong,
+.experience-teen .task-copy strong,
+.experience-teen .daily-plan-copy strong { color:#f3f8ff; }
+.experience-teen .visual-course-card span,
+.experience-teen .visual-course-card p,
+.experience-teen .home-shortcuts > button p,
+.experience-teen .daily-plan-copy p { color:#9cb2c8; }
+.experience-teen .visual-course-card button { color:#15d8ff; }
+.experience-teen .visual-course-card button:hover { color:#5ce3ff; }
+.experience-teen .learning-week > div { border-color:var(--line-strong); background:rgba(16,38,64,.7); color:#9cb2c8; }
+.experience-teen .learning-week > div.active { border-color:rgba(21,216,255,.55); background:rgba(21,216,255,.12); color:#bff1ff; }
+.experience-teen .learning-week > div.today { box-shadow:0 0 0 1px rgba(21,216,255,.6); }
+.experience-teen .learning-latest small { color:#15d8ff; }
+.experience-teen .learning-latest strong { color:#f3f8ff; }
+.experience-teen .learning-latest p { color:#9cb2c8; }
+
+/* ---- 任务 / 筛选 / 标签控件 ---- */
+.experience-teen .segmented-control { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .segmented-control button { color:#9cb2c8; }
+.experience-teen .segmented-control button.active { color:#06121f; background:#15d8ff; }
+.experience-teen .subject-filter { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .subject-filter button { color:#9cb2c8; }
+.experience-teen .subject-filter button.active { color:#06121f; background:#15d8ff; }
+.experience-teen .section-tabs button { color:#9cb2c8; background:rgba(16,38,64,.85); border-color:var(--line-strong); }
+.experience-teen .section-tabs button.active { color:#06121f; background:#15d8ff; }
+.experience-teen .task-board article { border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .task-summary article { border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .task-status-badge { border-color:var(--line-strong); background:rgba(21,216,255,.08); color:#9fd9ee; }
+.experience-teen .leaderboard-list > header { border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .leaderboard-summary > div { border:1px solid var(--line); background:rgba(16,38,64,.85); }
+.experience-teen .learner-name > span { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .learner-name em { color:#ffd18a; background:rgba(255,155,69,.14); }
+
+/* ---- 课程详情 / 阅读器 ---- */
+.experience-teen .chapter-list button { color:#dff4fb; border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .chapter-list button:hover { border-color:rgba(21,216,255,.5); }
+.experience-teen .toc-chapter { border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .course-overview-stat { border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .course-overview-next { border-color:var(--line); background:rgba(16,38,64,.7); }
+.experience-teen .course-overview-next > span { color:#9cb2c8; }
+.experience-teen .course-activity-item { border-color:var(--line); background:rgba(16,38,64,.7); }
+
+/* ---- AI 学习台 / 对话 ---- */
+.experience-teen .conversation { background:transparent; }
+.experience-teen .message > span { border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .message-content { color:#dff4fb; }
+.experience-teen .ai-topic-group li button { color:#9cb2c8; }
+.experience-teen .ai-topic-group li button.active { color:#06121f; background:#15d8ff; }
+.experience-teen .knowledge-grounding { border-color:var(--line); background:rgba(21,216,255,.06); }
+.experience-teen .teaching-chat > footer { color:#7f95ad; }
+.experience-teen .assistant-input { border-color:var(--line-strong); background:rgba(11,27,49,.95); }
+.experience-teen .assistant-input input { color:#f3f8ff; }
+.experience-teen .assistant-launcher { color:#06121f; background:linear-gradient(135deg,#15d8ff,#8b5cff); box-shadow:0 10px 26px rgba(90,140,255,.35); }
+.experience-teen .assistant-window > header { color:#06121f; background:linear-gradient(135deg,#15d8ff,#0fb0e0); }
+.experience-teen .assistant-avatar { background:rgba(255,255,255,.85); }
+.experience-teen .markdown-body { color:#d7e7f7; }
+.experience-teen .markdown-body h1, .experience-teen .markdown-body h2, .experience-teen .markdown-body h3 { color:#f3f8ff; }
+.experience-teen .markdown-body code { color:#8fe8ff; background:rgba(21,216,255,.1); }
+.experience-teen .markdown-body pre { border-color:var(--line); background:#05101d; }
+.experience-teen .markdown-body pre code { color:#b7f3ff; background:transparent; }
+.experience-teen .markdown-body blockquote { border-left-color:#15d8ff; color:#9cb2c8; }
+.experience-teen .markdown-body table th { border-color:var(--line-strong); background:rgba(21,216,255,.08); }
+.experience-teen .markdown-body table td { border-color:var(--line); }
+.experience-teen .code-coach-md { color:#cfe3f5; }
+.experience-teen .practice-quiz input { accent-color:#15d8ff; }
+.experience-teen .quiz-retry { border-color:var(--line-strong); background:rgba(16,38,64,.9); color:#9cb2c8; }
+
+/* ---- 表单 / 弹窗 ---- */
+.experience-teen input:not([type="checkbox"]):not([type="radio"]),
+.experience-teen select,
+.experience-teen textarea { color:#f3f8ff; border-color:rgba(125,168,210,.32); background:rgba(11,27,49,.95); }
+.experience-teen .login-dialog { border-color:rgba(125,168,210,.25); border-radius:18px; background:linear-gradient(180deg,#102640,#0b1b31); }
+.experience-teen .modal { border-color:rgba(125,168,210,.25); border-radius:18px; background:linear-gradient(180deg,#102640,#0b1b31); }
+.experience-teen .password-checklist li { color:#9cb2c8; background:rgba(16,38,64,.8); }
+.experience-teen .password-checklist li.ok { color:#3fe0c4; background:rgba(63,224,196,.1); }
+.experience-teen .page-error { border-color:var(--line-strong); background:rgba(16,38,64,.7); }
+.experience-teen .empty-state { color:#9cb2c8; border:1px dashed var(--line-strong); background:rgba(16,38,64,.5); }
+
+/* ---- 代码实验室 ---- */
+.experience-teen .code-editor-body-monaco { background:transparent; }
+.experience-teen .python-monaco-host .monaco-editor,
+.experience-teen .python-monaco-host .monaco-editor-background,
+.experience-teen .python-monaco-host .margin { background:#0b1b31 !important; }
+.experience-teen .python-monaco-host .margin-view-overlays .line-numbers { color:#4f6b8a !important; }
+.experience-teen .code-editor-body > .line-numbers { color:#4f6b8a; background:#05101d; }
+.experience-teen .code-result-stream { border-color:var(--line-strong); background:#05101d; color:#b7f3ff; }
+.experience-teen .code-result-stream.is-error { border-color:rgba(255,129,119,.4); background:rgba(180,35,24,.16); color:#ffc4bd; }
+.experience-teen .code-artifact { border-color:var(--line); background:rgba(5,16,29,.85); }
+.experience-teen .artifact-download { color:#9fd9ee; border-color:var(--line-strong); background:rgba(16,38,64,.9); }
+.experience-teen .code-editor-actions select { border-color:var(--line-strong); background:#0b1b31; color:#dff4fb; }
+.experience-teen .blocklySvg { background-color:#0d2038 !important; }
+.experience-teen .blocklyToolboxDiv { background:#0b1b31; color:#9cb2c8; }
+.experience-teen .blocklyFlyoutBackground { fill:#102640 !important; }
+.experience-teen .stage-cloud { border-color:var(--line); background:rgba(16,38,64,.85); }
+.experience-teen .blockly-data-station { border-color:var(--line); background:rgba(16,38,64,.85); }
+.experience-teen .blockly-speech { border-color:var(--line); background:rgba(16,38,64,.85); }
+.experience-teen .visual-mission-hover-card { border-color:var(--line-strong); background:#0c1f38; }
+.experience-teen .visual-mission-hover-hint { color:#9cb2c8; background:rgba(5,16,29,.9); }
+.experience-teen .cat-lesson-gate, .experience-teen .cat-stage-picker { border-color:var(--line); background:rgba(16,38,64,.8); }
+.experience-teen .cat-explanation { background:rgba(16,38,64,.85); }
+.experience-teen .classification-questions fieldset { border-color:var(--line); background:rgba(16,38,64,.6); }
+.experience-teen .classification-options label { border-color:var(--line-strong); background:rgba(11,27,49,.9); }
+.experience-teen .classification-hint { color:#9cb2c8; background:rgba(21,216,255,.06); }
+.experience-teen .cat-goal-list span { background:rgba(16,38,64,.9); }
+
+/* ---- 绘本（中学端入口保持实验室氛围）---- */
+.experience-teen .picture-book { border-color:var(--line); background:#0c1f38; }
+.experience-teen .picture-book-spread { background:rgba(11,27,49,.85); }
+.experience-teen .picture-book-copy aside { border-color:var(--line); background:rgba(16,38,64,.8); }
+
+/* ==================================================================
+   小学端「AI 冒险乐园」token 强化 —— .experience-primary
+   依据《K12学生端双学段UI设计实施方案.md》§4.1：
+   主色 #35B9E8 · 辅助 #FFD85A/#FF8FA3/#55D4B4 · 圆角 20–24px · 柔和阴影
+   ================================================================== */
+.experience-primary .button { border-radius:14px; }
+.experience-primary .button.primary { border-color:#35b9e8; background:linear-gradient(135deg, #4cc3ec, #2196c9); box-shadow:0 8px 20px rgba(53,185,232,.28); }
+.experience-primary .button.primary:hover { background:linear-gradient(135deg, #63cdf2, #35b9e8); }
+.experience-primary .visual-course-card,
+.experience-primary .home-shortcuts > button,
+.experience-primary .daily-plan-grid article,
+.experience-primary .home-side-rail { border-radius:20px; box-shadow:0 10px 24px rgba(53,185,232,.12); }
+.experience-primary .primary-adventure-strip > button { border-radius:22px; }
+.experience-primary .visual-course-card:nth-child(3n + 1) { border-top-color:#35b9e8; }
+.experience-primary .visual-course-card:nth-child(3n + 2) { border-top-color:#ffd85a; }
+.experience-primary .visual-course-card:nth-child(3n) { border-top-color:#ff8fa3; }
+.experience-primary .daily-plan-grid article:nth-child(3n + 1) { border-top-color:#35b9e8; background:#f2faff; }
+.experience-primary .daily-plan-grid article:nth-child(3n + 2) { border-top-color:#ffd85a; background:#fffbea; }
+.experience-primary .daily-plan-grid article:nth-child(3n) { border-top-color:#55d4b4; background:#effbf7; }
+.experience-primary .daily-plan-grid article:nth-child(4n) { border-top-color:#ff8fa3; background:#fff5f8; }
+.experience-primary .home-shortcuts > button:nth-child(2) > span { color:#8a6d00; background:#fff3c4; }
+.experience-primary .home-shortcuts > button:nth-child(3) > span { color:#c2496b; background:#ffe4ec; }

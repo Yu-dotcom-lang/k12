@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpenText, CalendarCheck2, CheckCircle2, Clock3, FileText, LoaderCircle, RotateCcw, Sparkles, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { coursesApi, homeworksApi } from "../api/client.js";
+import { ExperiencePageHeader } from "../components/ExperiencePageHeader.jsx";
 import { LearningCalendar } from "../components/LearningCalendar.jsx";
 import { EXPERIENCE } from "../experience/experience.js";
 import { visualsFor } from "../experience/visualAssets.js";
